@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15.14
+    container_name: postgres_teia
+    restart: always
+    environment:
+      POSTGRES_USER: teia_user
+      POSTGRES_PASSWORD: teia_password
+      POSTGRES_DB: teia_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
