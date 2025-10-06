@@ -9,9 +9,14 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MenuRepository extends JpaRepository<Menu, Long> {
-    @Query("SELECT DISTINCT m FROM Menu m JOIN m.roles r WHERE r.id = :roleId ORDER BY m.orden ASC")
-    List<Menu> findByRole(@Param("roleId") Long roleId);
+public interface MenuRepository extends JpaRepository<Menu, Integer> {
 
-    boolean existsByLabel(String label);
+    @Query("SELECT DISTINCT m FROM Menu m " +
+            "JOIN m.roles r " +
+            "WHERE r.id = :roleId " +
+            "ORDER BY m.orden")
+    List<Menu> findByRoleId(@Param("roleId") Integer roleId);
+
+    @Query("SELECT COUNT(m) > 0 FROM Menu m WHERE m.label = :label")
+    boolean existsByLabel(@Param("label") String label);
 }

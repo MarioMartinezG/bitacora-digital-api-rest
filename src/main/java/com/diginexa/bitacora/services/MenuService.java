@@ -5,7 +5,7 @@ import com.diginexa.bitacora.dtos.MenuItemDTO;
 import com.diginexa.bitacora.entities.Menu;
 import com.diginexa.bitacora.entities.MenuItem;
 import com.diginexa.bitacora.entities.Rol;
-import com.diginexa.bitacora.exceptions.domain.MenuItemNotFoundException;
+import com.diginexa.bitacora.entities.Usuario;
 import com.diginexa.bitacora.exceptions.domain.MenuNotFoundException;
 import com.diginexa.bitacora.exceptions.domain.RoleNotFoundException;
 import com.diginexa.bitacora.exceptions.validation.DuplicateMenuException;
@@ -13,47 +13,40 @@ import com.diginexa.bitacora.exceptions.validation.DuplicateMenuItemException;
 import com.diginexa.bitacora.repositories.MenuItemRepository;
 import com.diginexa.bitacora.repositories.MenuRepository;
 import com.diginexa.bitacora.repositories.RolRepository;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MenuService {
 
     private final MenuRepository menuRepository;
     private final MenuItemRepository menuItemRepository;
     private final RolRepository rolRepository;
+    private final UserService userService;
 
-    public MenuService(MenuRepository menuRepository, MenuItemRepository menuItemRepository, RolRepository rolRepository) {
-        this.menuRepository = menuRepository;
-        this.menuItemRepository = menuItemRepository;
-        this.rolRepository = rolRepository;
-    }
+    public List<MenuDTO> getMenuByRole(Integer roleId) {
+        // Validar que el rol existe
+        Rol roleValidation = rolRepository.findById(roleId)
+                .orElseThrow(() -> new RoleNotFoundException("Rol con id " + roleId + " no existe"));
 
-    public List<MenuDTO> getMenuByRole(Long role) {
-        Rol roleValidation = rolRepository.findById(role)
-                .orElseThrow(() -> new RoleNotFoundException("Rol con id " + role + " no existe"));
-
-        List<Menu> menus = menuRepository.findByRole(role);
+        // Obtener menús para el rol (usando la tabla pivote menu_roles)
+        List<Menu> menus = menuRepository.findByRoleId(roleId);
         if (menus.isEmpty()) {
             throw new MenuNotFoundException("No se encontraron menús para el rol " + roleValidation.getNombre());
         }
 
-        return buildMenuDTOs(menus, role);
-
-        /*
-        return menus.stream()
-                .map(menu -> new MenuDTO(
-                        menu.getLabel(),
-                        menuItemRepository.findByRoleIdAndMenu(role, menu.getId())
-                                .stream()
-                                .map(i -> new MenuItemDTO(i.getLabel(), i.getIcon(), i.getRouterLink()))
-                                .toList()
-                ))
-                .toList();
-         */
+        return buildMenuDTOs(menus, roleId);
     }
 
+    @Transactional
     public Menu createMenu(Menu menu) {
         if (menuRepository.existsByLabel(menu.getLabel())) {
             throw new DuplicateMenuException("El menú '" + menu.getLabel() + "' ya existe");
@@ -61,32 +54,66 @@ public class MenuService {
         return menuRepository.save(menu);
     }
 
-    public MenuItem createMenuItem(MenuItem item, Long menuId) {
-        if (menuItemRepository.existsByLabelAndMenu(item.getLabel(), menuId)) {
+    @Transactional
+    public MenuItem createMenuItem(MenuItem item, Integer menuId) {
+        if (menuItemRepository.existsByLabelAndMenuId(item.getLabel(), menuId)) {
             throw new DuplicateMenuItemException(
-                    "El submenú '" + item.getLabel() + "' ya existe en el menú con id " + menuId
+                    "El ítem de menú '" + item.getLabel() + "' ya existe en el menú con id " + menuId
             );
         }
+
+        // Validar que el menú existe
+        Menu menu = menuRepository.findById(menuId)
+                .orElseThrow(() -> new MenuNotFoundException("Menú con id " + menuId + " no encontrado"));
+
+        item.setMenu(menu);
         return menuItemRepository.save(item);
     }
 
-    private List<MenuDTO> buildMenuDTOs(List<Menu> menus, Long roleId) {
+    public List<MenuDTO> getMenuForCurrentUser() {
+        // Obtener el usuario autenticado
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        // Obtener el usuario completo con su rol
+        Usuario usuario = userService.findByCorreo(username);
+
+        // Obtener el ID del rol del usuario
+        Integer roleId = Math.toIntExact(usuario.getRol().getId());
+
+        // Usar el metodo existente para obtener el menú por rol
+        return getMenuByRole(roleId);
+    }
+
+    private List<MenuDTO> buildMenuDTOs(List<Menu> menus, Integer roleId) {
         return menus.stream()
                 .map(menu -> {
-                    List<MenuItem> items = menuItemRepository.findByRoleIdAndMenu(roleId, menu.getId());
+                    // Obtener items del menú que están permitidos para este rol
+                    List<MenuItem> items = menuItemRepository.findByRoleIdAndMenuId(roleId, menu.getId());
 
-                    if (items.isEmpty()) {
-                        throw new MenuItemNotFoundException("El menú '" + menu.getLabel() + "' no tiene submenús para este rol");
-                    }
+                    List<MenuItemDTO> itemDTOs = items.stream()
+                            .map(this::convertToMenuItemDTO)
+                            .toList();
 
-                    return new MenuDTO(
-                            menu.getLabel(),
-                            items.stream()
-                                    .map(i -> new MenuItemDTO(i.getLabel(), i.getIcon(), i.getRouterLink()))
-                                    .toList()
-                    );
+                    return convertToMenuDTO(menu, itemDTOs);
                 })
                 .toList();
     }
 
+    private MenuDTO convertToMenuDTO(Menu menu, List<MenuItemDTO> items) {
+        return MenuDTO.builder()
+                .label(menu.getLabel())
+                .icon(menu.getIcon())
+                .routerLink(menu.getRouterLink())
+                .items(items)
+                .build();
+    }
+
+    private MenuItemDTO convertToMenuItemDTO(MenuItem item) {
+        return MenuItemDTO.builder()
+                .label(item.getLabel())
+                .icon(item.getIcon())
+                .routerLink(item.getRouterLink())
+                .build();
+    }
 }

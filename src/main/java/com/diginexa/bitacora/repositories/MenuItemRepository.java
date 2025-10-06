@@ -9,12 +9,14 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
-    @Query("SELECT mi FROM MenuItem mi JOIN mi.roles r WHERE r.id = :roleId AND mi.menu.id = :menuId ORDER BY mi.orden ASC")
-    List<MenuItem> findByRoleIdAndMenu(@Param("roleId") Long roleId,
-                                       @Param("menuId") Long menuId);
+public interface MenuItemRepository extends JpaRepository<MenuItem, Integer> {
 
-    @Query("SELECT CASE WHEN COUNT(mi) > 0 THEN TRUE ELSE FALSE END FROM MenuItem mi WHERE mi.label = :label AND mi.menu.id = :menuId")
-    boolean existsByLabelAndMenu(@Param("label") String label,
-                                 @Param("menuId") Long menuId);
+    @Query("SELECT DISTINCT mi FROM MenuItem mi " +
+            "JOIN mi.roles r " +
+            "WHERE r.id = :roleId AND mi.menu.id = :menuId " +
+            "ORDER BY mi.orden")
+    List<MenuItem> findByRoleIdAndMenuId(@Param("roleId") Integer roleId, @Param("menuId") Integer menuId);
+
+    @Query("SELECT COUNT(mi) > 0 FROM MenuItem mi WHERE mi.label = :label AND mi.menu.id = :menuId")
+    boolean existsByLabelAndMenuId(@Param("label") String label, @Param("menuId") Integer menuId);
 }

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,16 +20,23 @@ class MenuControllerIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
+    @WithMockUser(roles = "estudiante") // ✅ Simula un usuario autenticado
     void shouldReturnMenuForRoleEstudiante() throws Exception {
-        // Aquí asumo que en tu DB de pruebas tienes un rol con id = 1 (estudiante)
-        mockMvc.perform(get("/api/menu/{role}", 1L)
+        mockMvc.perform(get("/api/menu/{role}", 1)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                // Validamos que viene un array con al menos un menú
                 .andExpect(jsonPath("$[0].label").value("Inicio"))
                 .andExpect(jsonPath("$[0].items[0].label").value("Dashboard"))
                 .andExpect(jsonPath("$[1].label").value("Bitácora Digital"))
                 .andExpect(jsonPath("$[1].items[0].label").value("Caracteriza tu Asignatura"));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenNoAuthentication() throws Exception {
+        // ✅ Prueba sin autenticación
+        mockMvc.perform(get("/api/menu/{role}", 1)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
     }
 }
