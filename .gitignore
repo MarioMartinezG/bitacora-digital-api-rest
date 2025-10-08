@@ -36,7 +36,5 @@ out/
 ### VS Code ###
 .vscode/
 
-### Directorio de logs
-/logs
 ### Docker DB ###
 /db/postgres-data
