@@ -1,14 +1,12 @@
 package com.diginexa.bitacora.exceptions;
 
 import com.diginexa.bitacora.dtos.ErrorResponse;
-import com.diginexa.bitacora.exceptions.domain.EmailAlreadyExistsException;
-import com.diginexa.bitacora.exceptions.domain.InvalidEmailFormatException;
-import com.diginexa.bitacora.exceptions.domain.MenuNotFoundException;
-import com.diginexa.bitacora.exceptions.domain.RoleNotFoundException;
+import com.diginexa.bitacora.exceptions.domain.*;
 import com.diginexa.bitacora.exceptions.security.InvalidJwtTokenException;
 import com.diginexa.bitacora.exceptions.security.JwtAuthenticationException;
 import com.diginexa.bitacora.exceptions.validation.DuplicateMenuException;
 import com.diginexa.bitacora.exceptions.validation.DuplicateMenuItemException;
+import com.diginexa.bitacora.exceptions.validation.RespuestaValidationException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import lombok.extern.slf4j.Slf4j;
@@ -140,6 +138,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(ex.getMessage(), "IllegalArgument", HttpStatus.BAD_REQUEST.value()));
+    }
+
+    @ExceptionHandler(ModuloNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleModuloNotFound(ModuloNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "ModuloNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(SeccionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSeccionNotFound(SeccionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "SeccionNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(CampoNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCampoNotFound(CampoNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "CampoNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(RespuestaValidationException.class)
+    public ResponseEntity<ErrorResponse> handleRespuestaValidation(RespuestaValidationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(ex.getMessage(), "RespuestaValidationError", HttpStatus.BAD_REQUEST.value()));
     }
 
     // ===== CUALQUIER OTRA EXCEPCIÓN NO CONTROLADA =====

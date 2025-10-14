@@ -69,27 +69,27 @@ INSERT INTO teia.secciones (modulo_id, nombre, tipo_seccion, orden, configuracio
 -- Insertar campos para la sección 1 (Contexto Específico)
 INSERT INTO teia.campos_seccion (seccion_id, label, tipo_campo, opciones, es_requerido, orden, configuracion) VALUES
 -- Sección 1: Contexto Específico
-(4, '¿El curso hace parte de un programa de pregrado, o posgrado?', 'seleccion', '["Pregrado", "Posgrado"]', true, 1, '{"codigo": "pregunta1"}'),
-(4, '¿Tu curso es de inicio, mitad o final de programa?', 'seleccion', '["Inicio", "Mitad", "Final"]', true, 2, '{"codigo": "pregunta2"}'),
-(4, '¿Cuántos estudiantes hay en tu aula?', 'numero', '[]', true, 3, '{"codigo": "pregunta3", "min_value": 1}'),
-(4, '¿El curso es presencial, virtual, híbrido?', 'seleccion', '["Presencial", "Virtual", "Híbrido"]', true, 4, '{"codigo": "pregunta4"}'),
-(4, '¿Este tema es principalmente teórico, práctico o una combinación de ambos?', 'seleccion', '["Teórico", "Práctico", "Una combinación de ambos"]', true, 5, '{"codigo": "pregunta5"}'),
-(4, '¿Tu curso es de fundamentación, disciplinar, de profundización, electivo?', 'seleccion', '["Fundamentación", "Disciplinar", "Profundización", "Electivo"]', true, 6, '{"codigo": "pregunta6"}'),
-(4, '¿Tu curso requiere actualización permanente, o es una temática estable que cambia poco?', 'seleccion', '["Requiere actualización permanente", "Es una temática estable"]', true, 7, '{"codigo": "pregunta7"}'),
-(4, '¿Tu curso tiene prerrequisitos o correquisitos?', 'seleccion', '["Prerrequisitos", "Correquisitos", "Ninguno"]', true, 8, '{"codigo": "pregunta8"}'),
-(4, '¿Tu curso es prerrequisito de otro?', 'seleccion', '["Sí", "No"]', true, 9, '{"codigo": "pregunta9"}'),
-(4, 'Detalle de prerrequisitos', 'textarea', '[]', false, 10, '{"codigo": "detallePregunta9", "depende_de": "pregunta9", "condicion": "Sí"}');
+(1, '¿El curso hace parte de un programa de pregrado, o posgrado?', 'seleccion', '["Pregrado", "Posgrado"]', true, 1, '{"codigo": "pregunta1"}'),
+(1, '¿Tu curso es de inicio, mitad o final de programa?', 'seleccion', '["Inicio", "Mitad", "Final"]', true, 2, '{"codigo": "pregunta2"}'),
+(1, '¿Cuántos estudiantes hay en tu aula?', 'numero', '[]', true, 3, '{"codigo": "pregunta3", "min_value": 1}'),
+(1, '¿El curso es presencial, virtual, híbrido?', 'seleccion', '["Presencial", "Virtual", "Híbrido"]', true, 4, '{"codigo": "pregunta4"}'),
+(1, '¿Este tema es principalmente teórico, práctico o una combinación de ambos?', 'seleccion', '["Teórico", "Práctico", "Una combinación de ambos"]', true, 5, '{"codigo": "pregunta5"}'),
+(1, '¿Tu curso es de fundamentación, disciplinar, de profundización, electivo?', 'seleccion', '["Fundamentación", "Disciplinar", "Profundización", "Electivo"]', true, 6, '{"codigo": "pregunta6"}'),
+(1, '¿Tu curso requiere actualización permanente, o es una temática estable que cambia poco?', 'seleccion', '["Requiere actualización permanente", "Es una temática estable"]', true, 7, '{"codigo": "pregunta7"}'),
+(1, '¿Tu curso tiene prerrequisitos o correquisitos?', 'seleccion', '["Prerrequisitos", "Correquisitos", "Ninguno"]', true, 8, '{"codigo": "pregunta8"}'),
+(1, '¿Tu curso es prerrequisito de otro?', 'seleccion', '["Sí", "No"]', true, 9, '{"codigo": "pregunta9"}'),
+(1, 'Detalle de prerrequisitos', 'textarea', '[]', false, 10, '{"codigo": "detallePregunta9", "depende_de": "pregunta9", "condicion": "Sí"}');
 
 -- Sección 2: Características de los estudiantes
 INSERT INTO teia.campos_seccion (seccion_id, label, tipo_campo, opciones, es_requerido, orden, configuracion) VALUES
-(5, '¿Cuáles son las características biopsicosociales, culturales, académicas y económicas de tus estudiantes?', 'textarea', '[]', true, 1, '{"codigo": "pregunta10"}'),
-(5, '¿Qué conocimiento previo, experiencias y predisposiciones iniciales suelen tener los estudiantes sobre el tema?', 'textarea', '[]', true, 2, '{"codigo": "pregunta11"}'),
-(5, '¿Cuáles son los estilos preferidos de aprendizaje de tus estudiantes?', 'textarea', '[]', true, 3, '{"codigo": "pregunta12"}'),
-(5, '¿Conoces las características de diversidad de los estudiantes que integrarán tu curso?', 'textarea', '[]', true, 4, '{"codigo": "pregunta13"}');
+(2, '¿Cuáles son las características biopsicosociales, culturales, académicas y económicas de tus estudiantes?', 'textarea', '[]', true, 1, '{"codigo": "pregunta10"}'),
+(2, '¿Qué conocimiento previo, experiencias y predisposiciones iniciales suelen tener los estudiantes sobre el tema?', 'textarea', '[]', true, 2, '{"codigo": "pregunta11"}'),
+(2, '¿Cuáles son los estilos preferidos de aprendizaje de tus estudiantes?', 'textarea', '[]', true, 3, '{"codigo": "pregunta12"}'),
+(2, '¿Conoces las características de diversidad de los estudiantes que integrarán tu curso?', 'textarea', '[]', true, 4, '{"codigo": "pregunta13"}');
 
 -- Sección 3: Tus características como docente
 INSERT INTO teia.campos_seccion (seccion_id, label, tipo_campo, opciones, es_requerido, orden, configuracion) VALUES
-(6, '¿Qué experiencia docente tienes en la enseñanza de este curso o de temas relacionados?', 'textarea', '[]', true, 1, '{"codigo": "pregunta14"}'),
-(6, '¿Qué te motiva a enseñar este tema en particular?', 'textarea', '[]', true, 2, '{"codigo": "pregunta15"}'),
-(6, '¿Qué resultados has obtenido en la evaluación de este curso anteriormente?', 'textarea', '[]', true, 3, '{"codigo": "pregunta16"}'),
-(6, '¿Cómo describes tu estilo de enseñanza?', 'textarea', '[]', true, 4, '{"codigo": "pregunta17"}');
+(3, '¿Qué experiencia docente tienes en la enseñanza de este curso o de temas relacionados?', 'textarea', '[]', true, 1, '{"codigo": "pregunta14"}'),
+(3, '¿Qué te motiva a enseñar este tema en particular?', 'textarea', '[]', true, 2, '{"codigo": "pregunta15"}'),
+(3, '¿Qué resultados has obtenido en la evaluación de este curso anteriormente?', 'textarea', '[]', true, 3, '{"codigo": "pregunta16"}'),
+(3, '¿Cómo describes tu estilo de enseñanza?', 'textarea', '[]', true, 4, '{"codigo": "pregunta17"}');

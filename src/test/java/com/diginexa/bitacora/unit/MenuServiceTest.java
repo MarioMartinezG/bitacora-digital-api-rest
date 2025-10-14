@@ -25,7 +25,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class MenuServiceUnitTest {
+class MenuServiceTest {
 
     @Mock
     private MenuRepository menuRepository;
@@ -39,7 +39,7 @@ class MenuServiceUnitTest {
     @InjectMocks
     private MenuService menuService;
 
-    public MenuServiceUnitTest() {
+    public MenuServiceTest() {
         MockitoAnnotations.openMocks(this);
     }
 
@@ -117,7 +117,7 @@ class MenuServiceUnitTest {
         // Act & Assert
         assertThatThrownBy(() -> menuService.getMenuByRole(roleId))
                 .isInstanceOf(MenuNotFoundException.class)
-                .hasMessage("No se encontraron menús para el rol USER");
+                .hasMessage("No se encontraron menús para el rol tutor");
     }
 
     private Rol buildRol() {
