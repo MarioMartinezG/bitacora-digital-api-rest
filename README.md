@@ -101,6 +101,8 @@ services:
       DB_USERNAME: teia_user
       DB_PASSWORD: teia_password
       JWT_SECRET: ${JWT_SECRET:-/kgDXgvjsnczjJKOWUC910j6TeR04o8Z/H+VBy9ce0lBmnnZsX0Mzr9xwzg4ZHT80sUphiM8uw3PT70z0twsSA==}
+      TUTOR_SERVICE_URL: ${TUTOR_SERVICE_URL:-http://host.docker.internal:8000}
+      TUTOR_SERVICE_TIMEOUT: ${TUTOR_SERVICE_TIMEOUT:-120000}
     ports:
       - "8080:8080"
     depends_on:
@@ -148,6 +150,8 @@ Variables de entorno (tienen valores por defecto para desarrollo):
 | `DB_USERNAME` | Usuario de BD | `teia_user` |
 | `DB_PASSWORD` | Contrasena de BD | `teia_password` |
 | `JWT_SECRET` | Clave secreta para JWT | (incluida en properties) |
+| `TUTOR_SERVICE_URL` | URL del servicio de tutor inteligente | `http://localhost:8000` |
+| `TUTOR_SERVICE_TIMEOUT` | Timeout para llamadas al tutor (ms) | `120000` |
 
 ## Estructura del Proyecto
 
@@ -214,6 +218,26 @@ src/main/java/com/diginexa/bitacora/
 | GET | `/api/bitacora/progreso/usuario/{id}` | Obtener progreso general |
 | GET | `/api/bitacora/progreso/usuario/{id}/seccion/{codigo}` | Obtener progreso de seccion |
 | PUT | `/api/bitacora/progreso/usuario/{id}/seccion/{codigo}` | Actualizar progreso |
+
+### Tutor Inteligente (Proxy a teia-ai-services)
+| Metodo | Endpoint | Auth | Descripcion |
+|--------|----------|------|-------------|
+| GET | `/api/tutor/status` | No | Estado del sistema y modelos disponibles |
+| GET | `/api/tutor/health` | No | Verificar conectividad con Ollama |
+| GET | `/api/tutor/modules` | Si | Obtener modulos del curso |
+| POST | `/api/tutor/ask` | Si | Enviar pregunta al tutor inteligente |
+
+**Ejemplo de request para `/api/tutor/ask`:**
+```json
+{
+  "question": "Dime que puedes hacer?",
+  "module": "Ajustes Razonables",
+  "user_id": "mario.martinez",
+  "session_id": "123456789",
+  "user_role": "estudiante",
+  "course_id": "ajustes_razonables"
+}
+```
 
 ## Base de Datos
 

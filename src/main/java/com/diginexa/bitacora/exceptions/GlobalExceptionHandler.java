@@ -3,6 +3,7 @@ package com.diginexa.bitacora.exceptions;
 import com.diginexa.bitacora.dtos.ErrorResponse;
 import com.diginexa.bitacora.exceptions.domain.*;
 import com.diginexa.bitacora.exceptions.domain.ResourceNotFoundException;
+import com.diginexa.bitacora.exceptions.domain.TutorServiceException;
 import com.diginexa.bitacora.exceptions.security.InvalidJwtTokenException;
 import com.diginexa.bitacora.exceptions.security.JwtAuthenticationException;
 import com.diginexa.bitacora.exceptions.validation.DuplicateMenuException;
@@ -169,6 +170,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of(ex.getMessage(), "ResourceNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    // ===== EXCEPCIONES DEL TUTOR INTELIGENTE =====
+
+    @ExceptionHandler(TutorServiceException.class)
+    public ResponseEntity<ErrorResponse> handleTutorServiceException(TutorServiceException ex) {
+        log.error("Error en servicio de tutor inteligente: {} - {}", ex.getErrorCode(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ErrorResponse.of(ex.getMessage(), ex.getErrorCode(), HttpStatus.SERVICE_UNAVAILABLE.value()));
     }
 
     // ===== CUALQUIER OTRA EXCEPCIÓN NO CONTROLADA =====
