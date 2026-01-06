@@ -9,6 +9,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * @deprecated Desde versión 2.0. Las secciones ahora se identifican por código string.
+ * @see com.diginexa.bitacora.repositories.RespuestaSeccionRepository
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @Repository
 public interface SeccionRepository extends JpaRepository<Seccion, Long> {
     List<Seccion> findByModuloIdOrderByOrdenAsc(Long moduloId);

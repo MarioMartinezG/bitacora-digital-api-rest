@@ -15,6 +15,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Desde versión 2.0. Usar BitacoraSeccionService para gestionar secciones.
+ * @see com.diginexa.bitacora.services.BitacoraSeccionService
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @Service
 @RequiredArgsConstructor
 @Slf4j

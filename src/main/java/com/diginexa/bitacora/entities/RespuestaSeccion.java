@@ -9,21 +9,22 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @deprecated Desde versión 2.0. Usar RespuestaSeccion para almacenar respuestas de formularios.
- * Esta entidad será eliminada en una versión futura.
- * @see com.diginexa.bitacora.entities.RespuestaSeccion
+ * Entidad para almacenar respuestas de formularios de secciones.
+ * Cada sección tiene un único registro por usuario con todas las respuestas en JSONB.
  */
-@Deprecated(since = "2.0", forRemoval = true)
 @Entity
-@Table(name = "respuestas", schema = "teia")
+@Table(name = "respuestas_seccion", schema = "teia",
+       uniqueConstraints = @UniqueConstraint(columnNames = {"usuario_id", "seccion_codigo"}))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Respuesta {
+public class RespuestaSeccion {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,26 +32,18 @@ public class Respuesta {
     @Column(name = "usuario_id", nullable = false)
     private Integer usuarioId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seccion_id")
-    @ToString.Exclude
-    private Seccion seccion;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "campo_id")
-    @ToString.Exclude
-    private CampoSeccion campo;
-
-    @Column(name = "respuesta_texto", columnDefinition = "TEXT")
-    private String respuestaTexto;
+    @Column(name = "seccion_codigo", nullable = false, length = 100)
+    private String seccionCodigo;
 
     @Column(columnDefinition = "JSONB")
     @Convert(converter = JsonbMapConverter.class)
     @JdbcTypeCode(SqlTypes.JSON)
-    private Map<String, Object> respuestaJson;
+    @Builder.Default
+    private Map<String, Object> datos = new HashMap<>();
 
-    @Column(name = "estado_avance")
-    private String estadoAvance;
+    @Column(name = "estado_avance", length = 20)
+    @Builder.Default
+    private String estadoAvance = "sin_avances";
 
     @Column(name = "fecha_creacion")
     @CreationTimestamp

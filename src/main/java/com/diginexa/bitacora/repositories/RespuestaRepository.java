@@ -10,6 +10,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * @deprecated Desde versión 2.0. Usar RespuestaSeccionRepository para almacenar respuestas.
+ * @see com.diginexa.bitacora.repositories.RespuestaSeccionRepository
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @Repository
 public interface RespuestaRepository extends JpaRepository<Respuesta, Long> {
 

@@ -2,6 +2,7 @@ package com.diginexa.bitacora.exceptions;
 
 import com.diginexa.bitacora.dtos.ErrorResponse;
 import com.diginexa.bitacora.exceptions.domain.*;
+import com.diginexa.bitacora.exceptions.domain.ResourceNotFoundException;
 import com.diginexa.bitacora.exceptions.security.InvalidJwtTokenException;
 import com.diginexa.bitacora.exceptions.security.JwtAuthenticationException;
 import com.diginexa.bitacora.exceptions.validation.DuplicateMenuException;
@@ -162,6 +163,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleRespuestaValidation(RespuestaValidationException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(ex.getMessage(), "RespuestaValidationError", HttpStatus.BAD_REQUEST.value()));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "ResourceNotFound", HttpStatus.NOT_FOUND.value()));
     }
 
     // ===== CUALQUIER OTRA EXCEPCIÓN NO CONTROLADA =====

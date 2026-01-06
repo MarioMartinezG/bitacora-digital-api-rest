@@ -10,6 +10,13 @@ import org.hibernate.type.SqlTypes;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @deprecated Desde versión 2.0. Usar identificadores string de sección en lugar de entidades.
+ * Esta entidad será eliminada en una versión futura.
+ * @see com.diginexa.bitacora.entities.RespuestaSeccion
+ * @see com.diginexa.bitacora.constants.SeccionCodigos
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @Entity
 @Table(name = "secciones", schema = "teia")
 @Data

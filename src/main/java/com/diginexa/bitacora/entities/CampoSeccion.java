@@ -11,6 +11,12 @@ import org.hibernate.type.SqlTypes;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @deprecated Desde versión 2.0. La estructura de campos ahora es definida por el frontend.
+ * Esta entidad será eliminada en una versión futura.
+ * @see com.diginexa.bitacora.entities.RespuestaSeccion
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @Entity
 @Table(name = "campos_seccion", schema = "teia")
 @Data

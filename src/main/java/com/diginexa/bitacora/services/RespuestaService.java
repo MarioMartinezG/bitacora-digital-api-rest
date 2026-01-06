@@ -21,6 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * @deprecated Desde versión 2.0. Usar BitacoraSeccionService para guardar respuestas.
+ * @see com.diginexa.bitacora.services.BitacoraSeccionService
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @Service
 @RequiredArgsConstructor
 @Slf4j

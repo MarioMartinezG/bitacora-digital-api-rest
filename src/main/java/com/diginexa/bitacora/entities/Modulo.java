@@ -8,6 +8,12 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @deprecated Desde versión 2.0. Usar identificadores string de sección en lugar de módulos.
+ * Esta entidad será eliminada en una versión futura.
+ * @see com.diginexa.bitacora.constants.SeccionCodigos
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @Entity
 @Table(name = "modulos", schema = "teia")
 @Data

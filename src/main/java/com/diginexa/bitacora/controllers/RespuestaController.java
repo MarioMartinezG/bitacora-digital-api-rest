@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * @deprecated Desde versión 2.0. Usar BitacoraSeccionController para guardar respuestas.
+ * @see com.diginexa.bitacora.controllers.BitacoraSeccionController
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @RestController
 @RequestMapping("/api/respuestas")
 @RequiredArgsConstructor

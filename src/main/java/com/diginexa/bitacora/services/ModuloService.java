@@ -10,6 +10,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * @deprecated Desde versión 2.0. Los módulos ya no se usan.
+ * @see com.diginexa.bitacora.services.BitacoraSeccionService
+ */
+@Deprecated(since = "2.0", forRemoval = true)
 @Service
 @RequiredArgsConstructor
 @Slf4j
