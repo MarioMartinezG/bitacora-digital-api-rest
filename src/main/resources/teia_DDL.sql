@@ -340,3 +340,114 @@ COMMENT ON COLUMN teia.respuestas_seccion.seccion_codigo IS 'Código único de s
 COMMENT ON COLUMN teia.respuestas_seccion.datos IS 'JSON con todas las respuestas del formulario de la sección.';
 COMMENT ON COLUMN teia.equipo_docente.dias IS 'Array JSON de días de atención: ["Lunes", "Martes", ...]';
 COMMENT ON COLUMN teia.temas_contenido.subtemas IS 'Array JSON de nombres de subtemas: ["Subtema 1", "Subtema 2", ...]';
+
+-- =============================================
+-- TABLAS - Sistema de Notificaciones v2.1
+-- =============================================
+
+-- Relación Tutor-Estudiante (activada desde v2.1)
+CREATE TABLE IF NOT EXISTS teia.tutor_estudiante (
+    id SERIAL PRIMARY KEY,
+    tutor_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    estudiante_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    fecha_asignacion TIMESTAMP DEFAULT NOW(),
+    activo BOOLEAN DEFAULT true,
+    UNIQUE (tutor_id, estudiante_id)
+);
+
+-- Tabla de notificaciones principales
+CREATE TABLE IF NOT EXISTS teia.notificaciones (
+    id SERIAL PRIMARY KEY,
+    usuario_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    tipo VARCHAR(50) NOT NULL
+        CHECK (tipo IN ('VENCIMIENTO_PROXIMO', 'SOLICITUD_SESION', 'UMBRAL_ALCANZADO')),
+    prioridad VARCHAR(20) NOT NULL
+        CHECK (prioridad IN ('CRITICO', 'ALERTA', 'INFO')),
+    titulo VARCHAR(255) NOT NULL,
+    mensaje TEXT NOT NULL,
+    datos_adicionales JSONB DEFAULT '{}',
+    leida BOOLEAN DEFAULT false,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+    fecha_lectura TIMESTAMP,
+    entregada_email BOOLEAN DEFAULT false,
+    entregada_websocket BOOLEAN DEFAULT false
+);
+
+-- Calendario con fechas límite por módulo/sección
+CREATE TABLE IF NOT EXISTS teia.calendario_modulos (
+    id SERIAL PRIMARY KEY,
+    seccion_codigo VARCHAR(100) NOT NULL UNIQUE,
+    nombre_modulo VARCHAR(200) NOT NULL,
+    fecha_limite DATE NOT NULL,
+    descripcion TEXT,
+    activo BOOLEAN DEFAULT true,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMP DEFAULT NOW()
+);
+
+-- Configuración paramétrica de notificaciones
+CREATE TABLE IF NOT EXISTS teia.configuracion_notificaciones (
+    id SERIAL PRIMARY KEY,
+    clave VARCHAR(100) NOT NULL UNIQUE,
+    valor VARCHAR(255) NOT NULL,
+    descripcion TEXT,
+    tipo_dato VARCHAR(20) DEFAULT 'STRING'
+        CHECK (tipo_dato IN ('STRING', 'INTEGER', 'BOOLEAN', 'JSON'))
+);
+
+-- Solicitudes de sesión tutor-estudiante
+CREATE TABLE IF NOT EXISTS teia.solicitudes_sesion (
+    id SERIAL PRIMARY KEY,
+    estudiante_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    tutor_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    motivo TEXT NOT NULL,
+    estado VARCHAR(20) DEFAULT 'PENDIENTE'
+        CHECK (estado IN ('PENDIENTE', 'ACEPTADA', 'RECHAZADA', 'COMPLETADA')),
+    fecha_solicitud TIMESTAMP DEFAULT NOW(),
+    fecha_respuesta TIMESTAMP,
+    notas_tutor TEXT
+);
+
+-- =============================================
+-- ÍNDICES - Sistema de Notificaciones
+-- =============================================
+
+CREATE INDEX IF NOT EXISTS idx_tutor_estudiante_tutor ON teia.tutor_estudiante(tutor_id);
+CREATE INDEX IF NOT EXISTS idx_tutor_estudiante_estudiante ON teia.tutor_estudiante(estudiante_id);
+CREATE INDEX IF NOT EXISTS idx_tutor_estudiante_activo ON teia.tutor_estudiante(activo);
+
+CREATE INDEX IF NOT EXISTS idx_notificaciones_usuario ON teia.notificaciones(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_notificaciones_leida ON teia.notificaciones(usuario_id, leida);
+CREATE INDEX IF NOT EXISTS idx_notificaciones_tipo ON teia.notificaciones(tipo);
+CREATE INDEX IF NOT EXISTS idx_notificaciones_fecha ON teia.notificaciones(fecha_creacion DESC);
+
+CREATE INDEX IF NOT EXISTS idx_calendario_seccion ON teia.calendario_modulos(seccion_codigo);
+CREATE INDEX IF NOT EXISTS idx_calendario_fecha ON teia.calendario_modulos(fecha_limite);
+
+CREATE INDEX IF NOT EXISTS idx_solicitudes_estudiante ON teia.solicitudes_sesion(estudiante_id);
+CREATE INDEX IF NOT EXISTS idx_solicitudes_tutor ON teia.solicitudes_sesion(tutor_id);
+CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON teia.solicitudes_sesion(estado);
+
+-- =============================================
+-- TRIGGERS - Sistema de Notificaciones
+-- =============================================
+
+-- Trigger para calendario_modulos
+DROP TRIGGER IF EXISTS trigger_update_calendario_modulos ON teia.calendario_modulos;
+CREATE TRIGGER trigger_update_calendario_modulos
+    BEFORE UPDATE ON teia.calendario_modulos
+    FOR EACH ROW EXECUTE FUNCTION teia.update_fecha_actualizacion();
+
+-- =============================================
+-- COMENTARIOS - Sistema de Notificaciones
+-- =============================================
+
+COMMENT ON TABLE teia.tutor_estudiante IS 'Relación de asignación entre tutores y estudiantes.';
+COMMENT ON TABLE teia.notificaciones IS 'Sistema de notificaciones para estudiantes, tutores y coordinadores.';
+COMMENT ON TABLE teia.calendario_modulos IS 'Calendario con fechas límite por módulo/sección.';
+COMMENT ON TABLE teia.configuracion_notificaciones IS 'Configuración paramétrica del sistema de notificaciones.';
+COMMENT ON TABLE teia.solicitudes_sesion IS 'Solicitudes de sesión de estudiantes a sus tutores asignados.';
+
+COMMENT ON COLUMN teia.notificaciones.tipo IS 'Tipo: VENCIMIENTO_PROXIMO, SOLICITUD_SESION, UMBRAL_ALCANZADO';
+COMMENT ON COLUMN teia.notificaciones.prioridad IS 'Prioridad: CRITICO (rojo), ALERTA (amarillo), INFO (azul)';
+COMMENT ON COLUMN teia.notificaciones.datos_adicionales IS 'JSON con datos contextuales (seccion, estudiante, etc.)';

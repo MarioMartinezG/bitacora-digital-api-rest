@@ -34,6 +34,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
+	// WebSocket (NOTIFICACIONES EN TIEMPO REAL)
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+	// Email (NOTIFICACIONES POR CORREO)
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
 	// JWT (AUTENTICACIÓN)
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'

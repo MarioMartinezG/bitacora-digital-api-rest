@@ -64,6 +64,17 @@ WHERE mi.menu_id = 2;
 SELECT setval(pg_get_serial_sequence('teia.menus', 'id'), (SELECT MAX(id) FROM teia.menus));
 SELECT setval(pg_get_serial_sequence('teia.menu_items', 'id'), (SELECT MAX(id) FROM teia.menu_items));
 
+-- =============================================
+-- DATOS INICIALES - Configuración de Notificaciones
+-- =============================================
+
+INSERT INTO teia.configuracion_notificaciones (clave, valor, descripcion, tipo_dato) VALUES
+    ('DIAS_ANTICIPACION_VENCIMIENTO', '7,3,1', 'Días antes del vencimiento para notificar (separados por coma)', 'STRING'),
+    ('UMBRAL_PROGRESO_NOTIFICACION', '80', 'Porcentaje de progreso para notificar al tutor', 'INTEGER'),
+    ('EMAIL_HABILITADO', 'true', 'Habilitar envío de correos electrónicos', 'BOOLEAN'),
+    ('WEBSOCKET_HABILITADO', 'true', 'Habilitar notificaciones en tiempo real via WebSocket', 'BOOLEAN'),
+    ('HORA_EJECUCION_SCHEDULER', '08:00', 'Hora de ejecución del scheduler de vencimientos (HH:mm)', 'STRING')
+ON CONFLICT (clave) DO NOTHING;
 
 -- =============================================
 -- DATOS OBSOLETOS - Arquitectura anterior v1.0
