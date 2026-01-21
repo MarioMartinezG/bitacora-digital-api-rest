@@ -14,6 +14,8 @@ public interface ProgresoSeccionRepository extends JpaRepository<ProgresoSeccion
 
     List<ProgresoSeccion> findByUsuarioId(Integer usuarioId);
 
+    List<ProgresoSeccion> findBySeccionCodigo(String seccionCodigo);
+
     boolean existsByUsuarioIdAndSeccionCodigo(Integer usuarioId, String seccionCodigo);
 
     void deleteByUsuarioIdAndSeccionCodigo(Integer usuarioId, String seccionCodigo);

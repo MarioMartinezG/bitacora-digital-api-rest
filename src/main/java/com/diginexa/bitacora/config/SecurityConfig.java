@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/tutor/status", "/api/tutor/health").permitAll()
+                        .requestMatchers("/ws/**").permitAll()  // WebSocket endpoints
                         .anyRequest().authenticated()
                 );
 

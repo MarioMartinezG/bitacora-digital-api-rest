@@ -8,6 +8,7 @@ import com.diginexa.bitacora.exceptions.security.InvalidJwtTokenException;
 import com.diginexa.bitacora.exceptions.security.JwtAuthenticationException;
 import com.diginexa.bitacora.exceptions.validation.DuplicateMenuException;
 import com.diginexa.bitacora.exceptions.validation.DuplicateMenuItemException;
+import com.diginexa.bitacora.exceptions.validation.ForbiddenException;
 import com.diginexa.bitacora.exceptions.validation.RespuestaValidationException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -170,6 +171,51 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of(ex.getMessage(), "ResourceNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    // ===== EXCEPCIONES DE NOTIFICACIONES =====
+
+    @ExceptionHandler(NotificacionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotificacionNotFound(NotificacionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "NotificacionNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(TutorNoAsignadoException.class)
+    public ResponseEntity<ErrorResponse> handleTutorNoAsignado(TutorNoAsignadoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "TutorNoAsignado", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(SolicitudSesionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSolicitudSesionNotFound(SolicitudSesionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "SolicitudSesionNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(ConfiguracionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleConfiguracionNotFound(ConfiguracionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "ConfiguracionNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(CalendarioModuloNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCalendarioModuloNotFound(CalendarioModuloNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "CalendarioModuloNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of(ex.getMessage(), "IllegalState", HttpStatus.CONFLICT.value()));
+    }
+
+    // ===== EXCEPCIONES EN OPERACIONES =====
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse.of(ex.getMessage(), "Forbidden", HttpStatus.FORBIDDEN.value()));
     }
 
     // ===== EXCEPCIONES DEL TUTOR INTELIGENTE =====
