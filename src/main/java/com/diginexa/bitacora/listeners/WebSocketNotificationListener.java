@@ -1,7 +1,9 @@
 package com.diginexa.bitacora.listeners;
 
 import com.diginexa.bitacora.dtos.notificacion.NotificacionDTO;
+import com.diginexa.bitacora.entities.Usuario;
 import com.diginexa.bitacora.events.NotificacionEvent;
+import com.diginexa.bitacora.repositories.UsuarioRepository;
 import com.diginexa.bitacora.services.ConfiguracionNotificacionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 /**
  * Listener que envía notificaciones en tiempo real via WebSocket.
@@ -24,6 +27,7 @@ public class WebSocketNotificationListener {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ConfiguracionNotificacionService configService;
+    private final UsuarioRepository usuarioRepository;
 
     @EventListener
     @Order(2)
@@ -36,8 +40,17 @@ public class WebSocketNotificationListener {
         }
 
         try {
-            log.info("Enviando notificación WebSocket a usuario {}",
-                    event.getUsuarioDestinoId());
+            // Obtener el username del usuario destino para que coincida con la autenticación WebSocket
+            Optional<Usuario> usuarioOpt = usuarioRepository.findById(event.getUsuarioDestinoId());
+            if (usuarioOpt.isEmpty()) {
+                log.warn("Usuario destino {} no encontrado, omitiendo envío WebSocket",
+                        event.getUsuarioDestinoId());
+                return;
+            }
+
+            String username = usuarioOpt.get().getUsername();
+            log.info("Enviando notificación WebSocket a usuario {} (username: {})",
+                    event.getUsuarioDestinoId(), username);
 
             NotificacionDTO dto = NotificacionDTO.builder()
                     .tipo(event.getTipo().name())
@@ -50,16 +63,16 @@ public class WebSocketNotificationListener {
                     .fechaCreacion(LocalDateTime.now())
                     .build();
 
-            // Enviar al canal específico del usuario
+            // Enviar al canal específico del usuario usando el username
             String destination = "/queue/notificaciones";
             messagingTemplate.convertAndSendToUser(
-                    event.getUsuarioDestinoId().toString(),
+                    username,
                     destination,
                     dto
             );
 
-            log.debug("Notificación WebSocket enviada exitosamente a usuario {}",
-                    event.getUsuarioDestinoId());
+            log.debug("Notificación WebSocket enviada exitosamente a usuario {} (username: {})",
+                    event.getUsuarioDestinoId(), username);
 
         } catch (Exception e) {
             log.error("Error enviando notificación WebSocket a usuario {}: {}",

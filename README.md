@@ -370,29 +370,270 @@ Esquema: `teia`
 
 ## WebSocket - Notificaciones en Tiempo Real
 
-La aplicacion soporta notificaciones en tiempo real mediante WebSocket con STOMP.
+La aplicacion soporta notificaciones en tiempo real mediante WebSocket con STOMP sobre SockJS. Las notificaciones se envian automaticamente cuando ocurren eventos como solicitudes de sesion entre estudiantes y tutores.
 
-### Configuracion del Cliente
+### Arquitectura
 
-```javascript
-const socket = new SockJS('/ws');
-const stompClient = Stomp.over(socket);
-
-stompClient.connect({}, function(frame) {
-    // Suscribirse a notificaciones del usuario
-    stompClient.subscribe('/user/{usuarioId}/queue/notificaciones', function(message) {
-        const notificacion = JSON.parse(message.body);
-        console.log('Nueva notificacion:', notificacion);
-    });
-});
+```
+Estudiante                    Servidor                         Tutor
+    |                            |                               |
+    |  POST /solicitudes-sesion  |                               |
+    |--------------------------->|                               |
+    |                            |  1. Guarda solicitud en BD    |
+    |                            |  2. Persiste notificacion     |
+    |                            |  3. Envia via WebSocket       |
+    |                            |------------------------------>|
+    |                            |     /user/queue/notificaciones|
+    |  201 Created               |                               |
+    |<---------------------------|                               |
 ```
 
-### Endpoints WebSocket
+### Flujo de Notificaciones por Solicitud de Sesion
 
-| Endpoint | Descripcion |
-|----------|-------------|
-| `/ws` | Endpoint de conexion WebSocket |
-| `/user/{id}/queue/notificaciones` | Cola de notificaciones por usuario |
+1. **Estudiante** crea una solicitud de sesion via REST API
+2. El sistema persiste la notificacion en la tabla `notificaciones`
+3. El `WebSocketNotificationListener` envia la notificacion en tiempo real al **tutor**
+4. El tutor recibe la notificacion si esta conectado al WebSocket con su token JWT
+
+### Configuracion del Endpoint
+
+| Configuracion | Valor |
+|---------------|-------|
+| Endpoint WebSocket | `/ws/notificaciones` |
+| Protocolo | STOMP sobre SockJS |
+| Destino de suscripcion | `/user/queue/notificaciones` |
+| Autenticacion | JWT en header `Authorization` |
+
+### Requisitos Importantes
+
+- El cliente debe conectarse con un **token JWT valido** del usuario que recibira las notificaciones
+- Para solicitudes de sesion, el **tutor** debe estar conectado con su propio token para recibir las notificaciones
+- El token se envia en el header `Authorization: Bearer {token}` durante la conexion STOMP
+
+### Cliente HTML/JavaScript de Ejemplo
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test WebSocket Notificaciones</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+    <h2>WebSocket Test - Notificaciones</h2>
+    <input type="text" id="token" placeholder="JWT Token del Tutor" style="width: 400px"><br><br>
+    <button onclick="connect()">Conectar</button>
+    <button onclick="disconnect()">Desconectar</button>
+    <div id="status">Desconectado</div>
+    <h3>Notificaciones recibidas:</h3>
+    <div id="notifications" style="border: 1px solid #ccc; padding: 10px; min-height: 200px;"></div>
+
+    <script>
+        let stompClient = null;
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            const socket = new SockJS('http://localhost:8080/ws/notificaciones');
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect(
+                { 'Authorization': 'Bearer ' + token },
+                function(frame) {
+                    document.getElementById('status').innerHTML =
+                        '<span style="color:green">Conectado</span>';
+
+                    // Suscribirse al canal de notificaciones del usuario
+                    stompClient.subscribe('/user/queue/notificaciones', function(message) {
+                        const notification = JSON.parse(message.body);
+                        showNotification(notification);
+                    });
+                },
+                function(error) {
+                    document.getElementById('status').innerHTML =
+                        '<span style="color:red">Error: ' + error + '</span>';
+                }
+            );
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            document.getElementById('status').innerHTML = 'Desconectado';
+        }
+
+        function showNotification(notif) {
+            const div = document.getElementById('notifications');
+            div.innerHTML += '<div style="margin: 10px 0; padding: 10px; background: #f0f0f0;">' +
+                '<strong>' + notif.titulo + '</strong><br>' +
+                '<small>Tipo: ' + notif.tipo + ' | Prioridad: ' + notif.prioridad + '</small><br>' +
+                notif.mensaje + '</div>';
+        }
+    </script>
+</body>
+</html>
+```
+
+### Ejemplo de Prueba Completa
+
+**Paso 1:** Asignar un tutor a un estudiante (si no existe la asignacion)
+```http
+POST http://localhost:8080/api/tutor-estudiante/asignar
+Authorization: Bearer {token_admin_o_tutor}
+Content-Type: application/json
+
+{
+    "tutorId": 1056,
+    "estudianteId": 1055
+}
+```
+
+**Paso 2:** Conectar el cliente WebSocket del tutor
+- Abrir el HTML de prueba en un navegador
+- Ingresar el token JWT del **tutor** (usuario 1056)
+- Hacer clic en "Conectar"
+
+**Paso 3:** Crear una solicitud de sesion como estudiante
+```http
+POST http://localhost:8080/api/solicitudes-sesion
+Authorization: Bearer {token_estudiante}
+Content-Type: application/json
+
+{
+    "estudianteId": 1055,
+    "motivo": "Necesito ayuda con el modulo 2"
+}
+```
+
+**Paso 4:** Verificar que el tutor recibe la notificacion en tiempo real en el cliente WebSocket
+
+### Estructura de la Notificacion WebSocket
+
+```json
+{
+    "tipo": "SOLICITUD_SESION",
+    "prioridad": "INFO",
+    "severity": "info",
+    "titulo": "Nueva solicitud de sesion",
+    "mensaje": "El estudiante Maria Garcia ha solicitado una sesion de tutoria",
+    "datosAdicionales": {
+        "solicitudId": 123,
+        "estudianteId": 1055,
+        "nombreEstudiante": "Maria Garcia",
+        "motivo": "Necesito ayuda con el modulo 2"
+    },
+    "leida": false,
+    "fechaCreacion": "2026-01-24T17:30:00"
+}
+```
+
+### Tipos de Notificacion
+
+El sistema soporta 3 tipos de notificaciones, todas enviadas via WebSocket en tiempo real:
+
+| Tipo | Descripcion | Destinatario | Disparador |
+|------|-------------|--------------|------------|
+| `SOLICITUD_SESION` | Estudiante solicita sesion con tutor | Tutor | API REST |
+| `VENCIMIENTO_PROXIMO` | Modulo/seccion proxima a vencer | Estudiante o Tutor | Scheduler automatico |
+| `UMBRAL_ALCANZADO` | Estudiante alcanzo umbral de progreso | Tutor | Actualizacion de progreso |
+
+#### SOLICITUD_SESION
+
+Notificacion enviada al tutor cuando un estudiante solicita una sesion de tutoria.
+
+- **Disparador:** `POST /api/solicitudes-sesion`
+- **Destinatario:** Tutor asignado al estudiante
+- **Prioridad:** INFO
+
+```json
+{
+    "tipo": "SOLICITUD_SESION",
+    "prioridad": "INFO",
+    "severity": "info",
+    "titulo": "Nueva solicitud de sesion",
+    "mensaje": "El estudiante Maria Garcia ha solicitado una sesion de tutoria",
+    "datosAdicionales": {
+        "solicitudId": 123,
+        "estudianteId": 1055,
+        "nombreEstudiante": "Maria Garcia",
+        "motivo": "Necesito ayuda con el modulo 2"
+    }
+}
+```
+
+#### VENCIMIENTO_PROXIMO
+
+Notificacion enviada cuando un modulo o seccion esta proximo a vencer. Se envia tanto al estudiante como a su tutor.
+
+- **Disparador:** Scheduler automatico (8:00 AM diario) o `POST /api/calendario/verificar-vencimientos`
+- **Destinatario:** Estudiante (sobre sus modulos) y Tutor (sobre modulos de sus estudiantes)
+- **Prioridad:** Variable segun dias restantes y estado de progreso
+  - `CRITICO`: Menos de 2 dias y progreso < 50%
+  - `ALERTA`: Menos de 5 dias y progreso < 75%
+  - `INFO`: Otros casos
+
+```json
+{
+    "tipo": "VENCIMIENTO_PROXIMO",
+    "prioridad": "ALERTA",
+    "severity": "warn",
+    "titulo": "Modulo proximo a vencer",
+    "mensaje": "El modulo 'Introduccion al RAC' vence en 3 dias",
+    "datosAdicionales": {
+        "seccionCodigo": "MOD_01",
+        "nombreModulo": "Introduccion al RAC",
+        "fechaLimite": "2026-01-27",
+        "diasRestantes": 3,
+        "estadoProgreso": "EN_PROGRESO",
+        "estudianteId": 1055,
+        "nombreEstudiante": "Maria Garcia"
+    }
+}
+```
+
+#### UMBRAL_ALCANZADO
+
+Notificacion enviada al tutor cuando un estudiante alcanza un umbral de progreso configurado (ej: 25%, 50%, 75%, 100%).
+
+- **Disparador:** `PUT /api/bitacora/progreso/usuario/{id}/seccion/{codigo}`
+- **Destinatario:** Tutor del estudiante
+- **Prioridad:** SUCCESS
+
+```json
+{
+    "tipo": "UMBRAL_ALCANZADO",
+    "prioridad": "SUCCESS",
+    "severity": "success",
+    "titulo": "Umbral de progreso alcanzado",
+    "mensaje": "El estudiante Maria Garcia ha alcanzado el 75% en el modulo Introduccion al RAC",
+    "datosAdicionales": {
+        "estudianteId": 1055,
+        "nombreEstudiante": "Maria Garcia",
+        "seccionCodigo": "MOD_01",
+        "nombreModulo": "Introduccion al RAC",
+        "porcentajeAlcanzado": 75
+    }
+}
+```
+
+### Prioridades de Notificacion
+
+| Prioridad | Severity | Color | Uso |
+|-----------|----------|-------|-----|
+| `CRITICO` | error | Rojo | Vencimientos inminentes sin progreso |
+| `ALERTA` | warn | Naranja | Vencimientos proximos |
+| `INFO` | info | Azul | Solicitudes de sesion, informacion general |
+| `SUCCESS` | success | Verde | Logros, umbrales alcanzados |
+
+### Configuracion del Sistema
+
+Las notificaciones WebSocket pueden habilitarse/deshabilitarse via configuracion:
+
+```http
+PUT http://localhost:8080/api/configuracion/notificaciones/websocket.habilitado?valor=true
+Authorization: Bearer {token}
+```
 
 ## Ejecucion de Tests
 
