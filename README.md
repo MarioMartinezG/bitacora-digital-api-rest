@@ -71,8 +71,6 @@ ENTRYPOINT ["java", "-jar", "app.war"]
 Crear archivo `docker-compose.yml`:
 
 ```yaml
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
