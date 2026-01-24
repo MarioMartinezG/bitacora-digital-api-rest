@@ -156,14 +156,21 @@ Variables de entorno (tienen valores por defecto para desarrollo):
 ```
 src/main/java/com/diginexa/bitacora/
 ├── annotations/       # Conversores JSONB personalizados
-├── config/           # Configuracion de seguridad y JWT
-├── constants/        # Constantes (codigos de seccion)
+├── config/           # Configuracion de seguridad, JWT y WebSocket
+├── constants/        # Constantes (codigos de seccion, tipos de notificacion)
 ├── controllers/      # Controladores REST
 ├── dtos/             # Objetos de transferencia
+│   ├── bitacora/     # DTOs de bitacora (secciones, equipo, temas)
+│   ├── notificacion/ # DTOs de notificaciones y calendario
+│   └── tutor/        # DTOs del tutor inteligente
 ├── entities/         # Entidades JPA
 ├── exceptions/       # Manejo de excepciones
+│   ├── domain/       # Excepciones de dominio
+│   ├── security/     # Excepciones de seguridad
+│   └── validation/   # Excepciones de validacion
 ├── repositories/     # Repositorios Spring Data
 ├── services/         # Logica de negocio
+├── utils/            # Utilidades (EmailUtils)
 └── validation/       # Validaciones personalizadas
 ```
 
@@ -237,6 +244,57 @@ src/main/java/com/diginexa/bitacora/
 }
 ```
 
+### Notificaciones
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| GET | `/api/notificaciones/usuario/{usuarioId}` | Obtener todas las notificaciones de un usuario |
+| GET | `/api/notificaciones/usuario/{usuarioId}/no-leidas` | Obtener notificaciones no leidas |
+| GET | `/api/notificaciones/usuario/{usuarioId}/resumen` | Obtener resumen (conteo por prioridad) |
+| GET | `/api/notificaciones/usuario/{usuarioId}/tipo/{tipo}` | Obtener notificaciones por tipo |
+| GET | `/api/notificaciones/{id}` | Obtener notificacion por ID |
+| PUT | `/api/notificaciones/{id}/leer` | Marcar notificacion como leida |
+| PUT | `/api/notificaciones/usuario/{usuarioId}/leer-todas` | Marcar todas como leidas |
+| DELETE | `/api/notificaciones/{id}` | Eliminar notificacion |
+
+### Solicitudes de Sesion
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| POST | `/api/solicitudes-sesion` | Crear solicitud de sesion |
+| GET | `/api/solicitudes-sesion/estudiante/{estudianteId}` | Obtener solicitudes de un estudiante |
+| GET | `/api/solicitudes-sesion/tutor/{tutorId}` | Obtener solicitudes de un tutor |
+| GET | `/api/solicitudes-sesion/tutor/{tutorId}/pendientes` | Obtener solicitudes pendientes de un tutor |
+| GET | `/api/solicitudes-sesion/{id}` | Obtener solicitud por ID |
+| PUT | `/api/solicitudes-sesion/{id}/responder` | Responder a una solicitud (tutor) |
+| DELETE | `/api/solicitudes-sesion/{id}/estudiante/{estudianteId}` | Cancelar solicitud (estudiante) |
+
+### Asignacion Tutor-Estudiante
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| POST | `/api/tutor-estudiante/asignar` | Asignar tutor a estudiante |
+| GET | `/api/tutor-estudiante/tutor/{tutorId}/estudiantes` | Obtener estudiantes asignados a un tutor |
+| GET | `/api/tutor-estudiante/estudiante/{estudianteId}/tutor` | Obtener tutor asignado a un estudiante |
+| GET | `/api/tutor-estudiante/estudiante/{estudianteId}/tiene-tutor` | Verificar si estudiante tiene tutor |
+| DELETE | `/api/tutor-estudiante/{id}` | Desactivar asignacion |
+
+### Calendario de Modulos
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| GET | `/api/calendario` | Listar todos los calendarios activos |
+| GET | `/api/calendario/seccion/{seccionCodigo}` | Obtener calendario por seccion |
+| GET | `/api/calendario/{id}` | Obtener calendario por ID |
+| POST | `/api/calendario` | Crear nuevo calendario |
+| PUT | `/api/calendario/{id}` | Actualizar calendario |
+| DELETE | `/api/calendario/{id}` | Eliminar calendario |
+| GET | `/api/calendario/proximos?dias=7` | Obtener proximos vencimientos |
+| POST | `/api/calendario/verificar-vencimientos` | Ejecutar verificacion manual |
+
+### Configuracion de Notificaciones
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| GET | `/api/configuracion/notificaciones` | Listar todas las configuraciones |
+| GET | `/api/configuracion/notificaciones/{clave}` | Obtener configuracion por clave |
+| PUT | `/api/configuracion/notificaciones/{clave}?valor={valor}` | Actualizar valor de configuracion |
+
 ## Base de Datos
 
 Esquema: `teia`
@@ -252,6 +310,37 @@ Esquema: `teia`
 | `equipo_docente` | Miembros del equipo docente |
 | `temas_contenido` | Temas con subtemas (JSONB) |
 | `progreso_secciones` | Estado de avance por seccion |
+| `notificaciones` | Notificaciones del sistema |
+| `tutor_estudiante` | Asignaciones tutor-estudiante |
+| `solicitudes_sesion` | Solicitudes de sesion de tutoria |
+| `calendario_modulo` | Fechas de vencimiento por modulo |
+| `configuracion_notificacion` | Configuracion del sistema de notificaciones |
+
+## WebSocket - Notificaciones en Tiempo Real
+
+La aplicacion soporta notificaciones en tiempo real mediante WebSocket con STOMP.
+
+### Configuracion del Cliente
+
+```javascript
+const socket = new SockJS('/ws');
+const stompClient = Stomp.over(socket);
+
+stompClient.connect({}, function(frame) {
+    // Suscribirse a notificaciones del usuario
+    stompClient.subscribe('/user/{usuarioId}/queue/notificaciones', function(message) {
+        const notificacion = JSON.parse(message.body);
+        console.log('Nueva notificacion:', notificacion);
+    });
+});
+```
+
+### Endpoints WebSocket
+
+| Endpoint | Descripcion |
+|----------|-------------|
+| `/ws` | Endpoint de conexion WebSocket |
+| `/user/{id}/queue/notificaciones` | Cola de notificaciones por usuario |
 
 ## Ejecucion de Tests
 
