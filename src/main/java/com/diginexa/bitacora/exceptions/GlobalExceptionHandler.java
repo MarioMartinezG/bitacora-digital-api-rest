@@ -220,6 +220,14 @@ public class GlobalExceptionHandler {
 
     // ===== EXCEPCIONES DEL TUTOR INTELIGENTE =====
 
+    @ExceptionHandler(TutorResourceNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTutorResourceNotFound(TutorResourceNotFoundException ex) {
+        log.warn("Recurso no encontrado en tutor inteligente: {}", ex.getDetail());
+        Map<String, String> response = new HashMap<>();
+        response.put("detail", ex.getDetail());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
     @ExceptionHandler(TutorServiceException.class)
     public ResponseEntity<ErrorResponse> handleTutorServiceException(TutorServiceException ex) {
         log.error("Error en servicio de tutor inteligente: {} - {}", ex.getErrorCode(), ex.getMessage());
