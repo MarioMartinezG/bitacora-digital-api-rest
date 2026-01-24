@@ -231,6 +231,10 @@ src/main/java/com/diginexa/bitacora/
 | GET | `/api/tutor/health` | No | Verificar conectividad con Ollama |
 | GET | `/api/tutor/modules` | Si | Obtener modulos del curso |
 | POST | `/api/tutor/ask` | Si | Enviar pregunta al tutor inteligente |
+| GET | `/api/tutor/documents` | Si | Listar documentos disponibles |
+| POST | `/api/tutor/index` | Si | Iniciar proceso de indexacion de documentos |
+| GET | `/api/tutor/index/status/{taskId}` | Si | Consultar estado de indexacion |
+| POST | `/api/tutor/documents/upload` | Si | Subir documentos (multipart/form-data) |
 
 **Ejemplo de request para `/api/tutor/ask`:**
 ```json
@@ -241,6 +245,54 @@ src/main/java/com/diginexa/bitacora/
   "session_id": "123456789",
   "user_role": "estudiante",
   "course_id": "ajustes_razonables"
+}
+```
+
+**Ejemplo de upload de documentos con curl:**
+```bash
+curl --location --request POST 'http://localhost:8080/api/tutor/documents/upload' \
+  --header 'Authorization: Bearer <token>' \
+  --form 'files=@"/path/to/document1.pdf"' \
+  --form 'files=@"/path/to/document2.pdf"'
+```
+
+**Respuesta de `/api/tutor/documents`:**
+```json
+{
+  "documents": [
+    {
+      "filename": "documento.pdf",
+      "path": "pdfs\\documento.pdf",
+      "size_bytes": 167204,
+      "extension": ".pdf",
+      "modified_at": "2026-01-20T21:17:13.526793"
+    }
+  ],
+  "total_count": 1,
+  "raw_path": "C:\\data\\raw"
+}
+```
+
+**Respuesta de `/api/tutor/index`:**
+```json
+{
+  "task_id": "task-uuid-123",
+  "status": "started",
+  "message": "Indexacion iniciada"
+}
+```
+
+**Respuesta de `/api/tutor/index/status/{taskId}`:**
+```json
+{
+  "task_id": "f3683b82-e723-4885-b891-d97d61790f5c",
+  "status": "running",
+  "message": "Generating embeddings...",
+  "started_at": "2026-01-24T21:04:34.631403",
+  "completed_at": null,
+  "documents_processed": 8,
+  "chunks_created": 559,
+  "error": null
 }
 ```
 
