@@ -388,12 +388,12 @@ Estudiante                    Servidor                         Tutor
     |<---------------------------|                               |
 ```
 
-### Flujo de Notificaciones por Solicitud de Sesion
+### Flujo de Notificaciones Bidireccional
 
-1. **Estudiante** crea una solicitud de sesion via REST API
-2. El sistema persiste la notificacion en la tabla `notificaciones`
-3. El `WebSocketNotificationListener` envia la notificacion en tiempo real al **tutor**
-4. El tutor recibe la notificacion si esta conectado al WebSocket con su token JWT
+El sistema soporta notificaciones en ambas direcciones:
+
+1. **Estudiante → Tutor:** Cuando el estudiante crea una solicitud de sesion
+2. **Tutor → Estudiante:** Cuando el tutor responde a la solicitud (acepta/rechaza/completa)
 
 ### Configuracion del Endpoint
 
@@ -408,68 +408,27 @@ Estudiante                    Servidor                         Tutor
 
 - El cliente debe conectarse con un **token JWT valido** del usuario que recibira las notificaciones
 - Para solicitudes de sesion, el **tutor** debe estar conectado con su propio token para recibir las notificaciones
+- Para respuestas de solicitud, el **estudiante** debe estar conectado con su propio token
 - El token se envia en el header `Authorization: Bearer {token}` durante la conexion STOMP
 
-### Ejemplo de Prueba Completa
+### Nota Tecnica: Identificacion de Usuario
 
-**Paso 1:** Asignar un tutor a un estudiante (si no existe la asignacion)
-```http
-POST http://localhost:8080/api/tutor-estudiante/asignar
-Authorization: Bearer {token_admin_o_tutor}
-Content-Type: application/json
+El sistema identifica a los usuarios conectados por WebSocket usando el **username** (parte del correo antes del `@`), no el correo completo ni el ID numerico.
 
-{
-    "tutorId": 1056,
-    "estudianteId": 1055
-}
-```
+Por ejemplo:
+- Correo: `tutor@unbosque.edu.co`
+- Username en sesion STOMP: `tutor`
 
-**Paso 2:** Conectar el cliente WebSocket del tutor
-- Abrir el HTML de prueba en un navegador
-- Ingresar el token JWT del **tutor** (usuario 1056)
-- Hacer clic en "Conectar"
-
-**Paso 3:** Crear una solicitud de sesion como estudiante
-```http
-POST http://localhost:8080/api/solicitudes-sesion
-Authorization: Bearer {token_estudiante}
-Content-Type: application/json
-
-{
-    "estudianteId": 1055,
-    "motivo": "Necesito ayuda con el modulo 2"
-}
-```
-
-**Paso 4:** Verificar que el tutor recibe la notificacion en tiempo real en el cliente WebSocket
-
-### Estructura de la Notificacion WebSocket
-
-```json
-{
-    "tipo": "SOLICITUD_SESION",
-    "prioridad": "INFO",
-    "severity": "info",
-    "titulo": "Nueva solicitud de sesion",
-    "mensaje": "El estudiante Maria Garcia ha solicitado una sesion de tutoria",
-    "datosAdicionales": {
-        "solicitudId": 123,
-        "estudianteId": 1055,
-        "nombreEstudiante": "Maria Garcia",
-        "motivo": "Necesito ayuda con el modulo 2"
-    },
-    "leida": false,
-    "fechaCreacion": "2026-01-24T17:30:00"
-}
-```
+Esto significa que cuando el servidor envia una notificacion, internamente resuelve el ID del usuario a su username para encontrar la sesion WebSocket correcta.
 
 ### Tipos de Notificacion
 
-El sistema soporta 3 tipos de notificaciones, todas enviadas via WebSocket en tiempo real:
+El sistema soporta 4 tipos de notificaciones, todas enviadas via WebSocket en tiempo real:
 
 | Tipo | Descripcion | Destinatario | Disparador |
 |------|-------------|--------------|------------|
-| `SOLICITUD_SESION` | Estudiante solicita sesion con tutor | Tutor | API REST |
+| `SOLICITUD_SESION` | Estudiante solicita sesion con tutor | Tutor | `POST /api/solicitudes-sesion` |
+| `RESPUESTA_SOLICITUD` | Tutor responde a solicitud de sesion | Estudiante | `PUT /api/solicitudes-sesion/{id}/responder` |
 | `VENCIMIENTO_PROXIMO` | Modulo/seccion proxima a vencer | Estudiante o Tutor | Scheduler automatico |
 | `UMBRAL_ALCANZADO` | Estudiante alcanzo umbral de progreso | Tutor | Actualizacion de progreso |
 
@@ -487,12 +446,58 @@ Notificacion enviada al tutor cuando un estudiante solicita una sesion de tutori
     "prioridad": "INFO",
     "severity": "info",
     "titulo": "Nueva solicitud de sesion",
-    "mensaje": "El estudiante Maria Garcia ha solicitado una sesion de tutoria",
+    "mensaje": "El estudiante Maria Garcia ha solicitado una sesion contigo.",
     "datosAdicionales": {
         "solicitudId": 123,
         "estudianteId": 1055,
         "nombreEstudiante": "Maria Garcia",
         "motivo": "Necesito ayuda con el modulo 2"
+    }
+}
+```
+
+#### RESPUESTA_SOLICITUD
+
+Notificacion enviada al estudiante cuando el tutor responde a su solicitud de sesion.
+
+- **Disparador:** `PUT /api/solicitudes-sesion/{id}/responder`
+- **Destinatario:** Estudiante que creo la solicitud
+- **Prioridad:** Variable segun el estado de la respuesta
+  - `SUCCESS`: Si el tutor acepta la solicitud
+  - `ALERTA`: Si el tutor rechaza la solicitud
+  - `INFO`: Si el tutor marca la sesion como completada
+
+```json
+{
+    "tipo": "RESPUESTA_SOLICITUD",
+    "prioridad": "SUCCESS",
+    "severity": "success",
+    "titulo": "Solicitud de sesion aceptada",
+    "mensaje": "El tutor Juan Perez ha aceptado tu solicitud de sesion.",
+    "datosAdicionales": {
+        "solicitudId": 123,
+        "tutorId": 1056,
+        "nombreTutor": "Juan Perez",
+        "estado": "ACEPTADA",
+        "notasTutor": "Te contactare por correo para coordinar la sesion"
+    }
+}
+```
+
+**Ejemplo de solicitud rechazada:**
+```json
+{
+    "tipo": "RESPUESTA_SOLICITUD",
+    "prioridad": "ALERTA",
+    "severity": "warn",
+    "titulo": "Solicitud de sesion rechazada",
+    "mensaje": "El tutor Juan Perez ha rechazado tu solicitud de sesion.",
+    "datosAdicionales": {
+        "solicitudId": 123,
+        "tutorId": 1056,
+        "nombreTutor": "Juan Perez",
+        "estado": "RECHAZADA",
+        "notasTutor": "En este momento no tengo disponibilidad, intenta de nuevo la proxima semana"
     }
 }
 ```
@@ -557,9 +562,61 @@ Notificacion enviada al tutor cuando un estudiante alcanza un umbral de progreso
 | Prioridad | Severity | Color | Uso |
 |-----------|----------|-------|-----|
 | `CRITICO` | error | Rojo | Vencimientos inminentes sin progreso |
-| `ALERTA` | warn | Naranja | Vencimientos proximos |
+| `ALERTA` | warn | Naranja | Vencimientos proximos, solicitudes rechazadas |
 | `INFO` | info | Azul | Solicitudes de sesion, informacion general |
-| `SUCCESS` | success | Verde | Logros, umbrales alcanzados |
+| `SUCCESS` | success | Verde | Logros, umbrales alcanzados, solicitudes aceptadas |
+
+### Ejemplo de Prueba: Flujo Estudiante → Tutor
+
+**Paso 1:** Asignar un tutor a un estudiante (si no existe la asignacion)
+```http
+POST http://localhost:8080/api/tutor-estudiante/asignar
+Authorization: Bearer {token_admin_o_tutor}
+Content-Type: application/json
+
+{
+    "tutorId": 1056,
+    "estudianteId": 1055
+}
+```
+
+**Paso 2:** Conectar el cliente WebSocket del tutor
+- Ingresar el token JWT del **tutor** (usuario 1056)
+- Suscribirse a `/user/queue/notificaciones`
+
+**Paso 3:** Crear una solicitud de sesion como estudiante
+```http
+POST http://localhost:8080/api/solicitudes-sesion
+Authorization: Bearer {token_estudiante}
+Content-Type: application/json
+
+{
+    "estudianteId": 1055,
+    "motivo": "Necesito ayuda con el modulo 2"
+}
+```
+
+**Paso 4:** Verificar que el tutor recibe la notificacion `SOLICITUD_SESION` en tiempo real
+
+### Ejemplo de Prueba: Flujo Tutor → Estudiante
+
+**Paso 1:** Conectar el cliente WebSocket del estudiante
+- Ingresar el token JWT del **estudiante** (usuario 1055)
+- Suscribirse a `/user/queue/notificaciones`
+
+**Paso 2:** Responder a la solicitud como tutor
+```http
+PUT http://localhost:8080/api/solicitudes-sesion/{id}/responder
+Authorization: Bearer {token_tutor}
+Content-Type: application/json
+
+{
+    "estado": "ACEPTADA",
+    "notasTutor": "Te contactare por correo para coordinar la sesion"
+}
+```
+
+**Paso 3:** Verificar que el estudiante recibe la notificacion `RESPUESTA_SOLICITUD` en tiempo real
 
 ### Configuracion del Sistema
 

@@ -40,17 +40,18 @@ public class WebSocketNotificationListener {
         }
 
         try {
-            // Obtener el username del usuario destino para que coincida con la autenticación WebSocket
+            // Buscar el correo del usuario destino (usado como username en WebSocket)
             Optional<Usuario> usuarioOpt = usuarioRepository.findById(event.getUsuarioDestinoId());
             if (usuarioOpt.isEmpty()) {
-                log.warn("Usuario destino {} no encontrado, omitiendo envío WebSocket",
+                log.warn("Usuario {} no encontrado, no se puede enviar notificación WebSocket",
                         event.getUsuarioDestinoId());
                 return;
             }
 
-            String username = usuarioOpt.get().getUsername();
-            log.info("Enviando notificación WebSocket a usuario {} (username: {})",
-                    event.getUsuarioDestinoId(), username);
+            // Usar getUsername() que devuelve la parte antes del @ (coincide con la sesión STOMP)
+            String usernameDestino = usuarioOpt.get().getUsername();
+            log.info("Enviando notificación WebSocket a usuario {} ({})",
+                    event.getUsuarioDestinoId(), usernameDestino);
 
             NotificacionDTO dto = NotificacionDTO.builder()
                     .tipo(event.getTipo().name())
@@ -63,16 +64,16 @@ public class WebSocketNotificationListener {
                     .fechaCreacion(LocalDateTime.now())
                     .build();
 
-            // Enviar al canal específico del usuario usando el username
+            // Enviar al canal específico del usuario usando su username (parte antes del @)
             String destination = "/queue/notificaciones";
             messagingTemplate.convertAndSendToUser(
-                    username,
+                    usernameDestino,
                     destination,
                     dto
             );
 
-            log.debug("Notificación WebSocket enviada exitosamente a usuario {} (username: {})",
-                    event.getUsuarioDestinoId(), username);
+            log.debug("Notificación WebSocket enviada exitosamente a usuario {} ({})",
+                    event.getUsuarioDestinoId(), usernameDestino);
 
         } catch (Exception e) {
             log.error("Error enviando notificación WebSocket a usuario {}: {}",

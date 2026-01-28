@@ -1,6 +1,7 @@
 package com.diginexa.bitacora.services;
 
 import com.diginexa.bitacora.constants.PrioridadNotificacion;
+import com.diginexa.bitacora.events.RespuestaSolicitudEvent;
 import com.diginexa.bitacora.events.SolicitudSesionEvent;
 import com.diginexa.bitacora.events.UmbralAlcanzadoEvent;
 import com.diginexa.bitacora.events.VencimientoProximoEvent;
@@ -133,6 +134,32 @@ public class NotificacionEventPublisher {
 
         log.info("Publicando evento de umbral alcanzado para tutor {} - estudiante {} alcanzó {}%",
                 tutorId, estudianteId, porcentajeAlcanzado);
+        eventPublisher.publishEvent(event);
+    }
+
+    /**
+     * Publica un evento de respuesta a solicitud de sesión.
+     */
+    public void publicarRespuestaSolicitud(
+            Integer estudianteId,
+            Long solicitudId,
+            Integer tutorId,
+            String nombreTutor,
+            String estado,
+            String notasTutor) {
+
+        RespuestaSolicitudEvent event = new RespuestaSolicitudEvent(
+                this,
+                estudianteId,
+                solicitudId,
+                tutorId,
+                nombreTutor,
+                estado,
+                notasTutor
+        );
+
+        log.info("Publicando evento de respuesta a solicitud {} para estudiante {} - estado: {}",
+                solicitudId, estudianteId, estado);
         eventPublisher.publishEvent(event);
     }
 }

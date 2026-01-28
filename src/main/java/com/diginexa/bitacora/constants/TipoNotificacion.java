@@ -6,6 +6,7 @@ package com.diginexa.bitacora.constants;
 public enum TipoNotificacion {
     VENCIMIENTO_PROXIMO("Vencimiento próximo de módulo"),
     SOLICITUD_SESION("Solicitud de sesión con tutor"),
+    RESPUESTA_SOLICITUD("Respuesta a solicitud de sesión"),
     UMBRAL_ALCANZADO("Umbral de progreso alcanzado");
 
     private final String descripcion;

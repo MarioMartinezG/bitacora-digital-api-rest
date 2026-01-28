@@ -360,9 +360,9 @@ CREATE TABLE IF NOT EXISTS teia.notificaciones (
     id SERIAL PRIMARY KEY,
     usuario_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
     tipo VARCHAR(50) NOT NULL
-        CHECK (tipo IN ('VENCIMIENTO_PROXIMO', 'SOLICITUD_SESION', 'UMBRAL_ALCANZADO')),
+        CHECK (tipo IN ('VENCIMIENTO_PROXIMO', 'SOLICITUD_SESION', 'RESPUESTA_SOLICITUD', 'UMBRAL_ALCANZADO')),
     prioridad VARCHAR(20) NOT NULL
-        CHECK (prioridad IN ('CRITICO', 'ALERTA', 'INFO')),
+        CHECK (prioridad IN ('CRITICO', 'ALERTA', 'INFO', 'SUCCESS')),
     titulo VARCHAR(255) NOT NULL,
     mensaje TEXT NOT NULL,
     datos_adicionales JSONB DEFAULT '{}',
@@ -448,6 +448,6 @@ COMMENT ON TABLE teia.calendario_modulos IS 'Calendario con fechas límite por m
 COMMENT ON TABLE teia.configuracion_notificaciones IS 'Configuración paramétrica del sistema de notificaciones.';
 COMMENT ON TABLE teia.solicitudes_sesion IS 'Solicitudes de sesión de estudiantes a sus tutores asignados.';
 
-COMMENT ON COLUMN teia.notificaciones.tipo IS 'Tipo: VENCIMIENTO_PROXIMO, SOLICITUD_SESION, UMBRAL_ALCANZADO';
-COMMENT ON COLUMN teia.notificaciones.prioridad IS 'Prioridad: CRITICO (rojo), ALERTA (amarillo), INFO (azul)';
+COMMENT ON COLUMN teia.notificaciones.tipo IS 'Tipo: VENCIMIENTO_PROXIMO, SOLICITUD_SESION, RESPUESTA_SOLICITUD, UMBRAL_ALCANZADO';
+COMMENT ON COLUMN teia.notificaciones.prioridad IS 'Prioridad: CRITICO (rojo), ALERTA (naranja), INFO (azul), SUCCESS (verde)';
 COMMENT ON COLUMN teia.notificaciones.datos_adicionales IS 'JSON con datos contextuales (seccion, estudiante, etc.)';
