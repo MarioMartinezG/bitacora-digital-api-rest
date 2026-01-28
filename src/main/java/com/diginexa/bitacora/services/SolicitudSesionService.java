@@ -132,6 +132,19 @@ public class SolicitudSesionService {
         SolicitudSesion guardada = repository.save(solicitud);
         log.info("Solicitud {} actualizada a estado: {}", id, request.getEstado());
 
+        // Notificar al estudiante sobre la respuesta
+        Usuario tutor = usuarioRepository.findById(guardada.getTutorId()).orElse(null);
+        String nombreTutor = tutor != null ? tutor.getNombre() : "Tu tutor";
+
+        eventPublisher.publicarRespuestaSolicitud(
+                guardada.getEstudianteId(),
+                guardada.getId(),
+                guardada.getTutorId(),
+                nombreTutor,
+                request.getEstado(),
+                request.getNotasTutor()
+        );
+
         return convertToDTOWithRelations(guardada);
     }
 
