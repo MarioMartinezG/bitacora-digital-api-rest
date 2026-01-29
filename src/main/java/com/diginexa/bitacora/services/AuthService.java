@@ -112,8 +112,8 @@ public class AuthService {
 
     public AuthSuccessResponse refreshToken(String refreshToken) {
         try {
-            String correo = jwtService.extractUsername(refreshToken);
-            Usuario usuario = userService.findByCorreo(correo);
+            String username = jwtService.extractUsername(refreshToken);
+            Usuario usuario = userService.findByUsername(username);
 
             if (!jwtService.validateToken(refreshToken, usuario)) {
                 throw new InvalidJwtTokenException("Refresh token inválido o expirado");

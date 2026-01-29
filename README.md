@@ -182,6 +182,7 @@ src/main/java/com/diginexa/bitacora/
 | POST | `/api/auth/login` | Iniciar sesion |
 | POST | `/api/auth/register` | Registrar usuario |
 | POST | `/api/auth/refresh` | Refrescar token |
+| POST | `/api/auth/logout` | Cerrar sesion |
 
 ### Menu
 | Metodo | Endpoint | Descripcion |

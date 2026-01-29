@@ -2,6 +2,7 @@ package com.diginexa.bitacora.controllers;
 
 import com.diginexa.bitacora.dtos.AuthSuccessResponse;
 import com.diginexa.bitacora.dtos.LoginRequest;
+import com.diginexa.bitacora.dtos.MessageResponse;
 import com.diginexa.bitacora.dtos.RegisterRequest;
 import com.diginexa.bitacora.services.AuthService;
 import jakarta.validation.Valid;
@@ -37,5 +38,10 @@ public class AuthController {
             return ResponseEntity.ok(response);
         }
         throw new RuntimeException("Refresh token no proporcionado");
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<MessageResponse> logout() {
+        return ResponseEntity.ok(MessageResponse.of("Sesión cerrada exitosamente"));
     }
 }
