@@ -24,7 +24,8 @@ SELECT 1, id FROM teia.roles WHERE nombre = 'estudiante';
 INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
 VALUES
     (1, 1, 'Dashboard', 'pi pi-fw pi-clipboard', '/home', 1),
-    (10, 1, 'Notificaciones', 'pi pi-bell', '/home/notificaciones', 8);
+    (10, 1, 'Notificaciones', 'pi pi-bell', '/home/notificaciones', 8),
+    (11, 1, 'Sesiones con tutor', 'pi pi-calendar-clock', '/home/solicitudes-sesion', 8);
 
 INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
 SELECT 1, id FROM teia.roles WHERE nombre = 'estudiante';
