@@ -37,6 +37,15 @@ public class ProgresoSeccion {
     @Builder.Default
     private Integer porcentajeCompletado = 0;
 
+    /**
+     * Estado asignado por el profesor/tutor.
+     * Si está presente, tiene prioridad sobre el estado calculado automáticamente.
+     * Permite al profesor marcar una sección como "en_desarrollo" aunque esté al 100%
+     * si hay ajustes pendientes.
+     */
+    @Column(name = "estado_profesor", length = 20)
+    private String estadoProfesor;
+
     @Column(name = "fecha_actualizacion")
     @UpdateTimestamp
     private LocalDateTime fechaActualizacion;

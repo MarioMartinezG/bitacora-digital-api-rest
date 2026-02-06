@@ -46,10 +46,13 @@ public class ProgresoService {
                 .seccionCodigo(p.getSeccionCodigo())
                 .estado(p.getEstado())
                 .porcentaje(p.getPorcentajeCompletado())
+                .estadoProfesor(p.getEstadoProfesor())
                 .build();
             secciones.put(p.getSeccionCodigo(), dto);
 
-            if ("completado".equals(p.getEstado())) {
+            // Usar estadoProfesor si existe, sino el estado calculado
+            String estadoEfectivo = p.getEstadoProfesor() != null ? p.getEstadoProfesor() : p.getEstado();
+            if ("completado".equals(estadoEfectivo)) {
                 completadas++;
             }
         }
@@ -68,9 +71,10 @@ public class ProgresoService {
     public ProgresoUsuarioDTO.ProgresoSeccionDTO actualizarEstadoSeccion(
             Integer usuarioId,
             String seccionCodigo,
-            String estado) {
-        log.info("Actualizando estado de sección {} a {} para usuario {}",
-                 seccionCodigo, estado, usuarioId);
+            String estado,
+            Integer progresoPorcentaje) {
+        log.info("Actualizando estado de sección {} a {} ({}%) para usuario {}",
+                 seccionCodigo, estado, progresoPorcentaje, usuarioId);
 
         ProgresoSeccion progreso = repository
             .findByUsuarioIdAndSeccionCodigo(usuarioId, seccionCodigo)
@@ -80,7 +84,9 @@ public class ProgresoService {
                 .build());
 
         progreso.setEstado(estado);
-        progreso.setPorcentajeCompletado(calcularPorcentaje(estado));
+        progreso.setPorcentajeCompletado(
+            progresoPorcentaje != null ? progresoPorcentaje : calcularPorcentaje(estado)
+        );
 
         ProgresoSeccion guardado = repository.save(progreso);
 
@@ -88,6 +94,7 @@ public class ProgresoService {
             .seccionCodigo(guardado.getSeccionCodigo())
             .estado(guardado.getEstado())
             .porcentaje(guardado.getPorcentajeCompletado())
+            .estadoProfesor(guardado.getEstadoProfesor())
             .build();
     }
 
@@ -100,12 +107,63 @@ public class ProgresoService {
                 .seccionCodigo(p.getSeccionCodigo())
                 .estado(p.getEstado())
                 .porcentaje(p.getPorcentajeCompletado())
+                .estadoProfesor(p.getEstadoProfesor())
                 .build())
             .orElse(ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
                 .seccionCodigo(seccionCodigo)
                 .estado("sin_avances")
                 .porcentaje(0)
+                .estadoProfesor(null)
                 .build());
+    }
+
+    /**
+     * Actualiza el estado asignado por el profesor/tutor.
+     * Este estado tiene prioridad sobre el estado calculado automáticamente.
+     *
+     * @param estudianteId ID del estudiante
+     * @param seccionCodigo Código de la sección
+     * @param estadoProfesor Nuevo estado asignado por el profesor (puede ser null para limpiar)
+     * @return DTO con el progreso actualizado
+     */
+    public ProgresoUsuarioDTO.ProgresoSeccionDTO actualizarEstadoProfesor(
+            Integer estudianteId,
+            String seccionCodigo,
+            String estadoProfesor) {
+        log.info("Profesor actualizando estado de sección {} a '{}' para estudiante {}",
+                 seccionCodigo, estadoProfesor, estudianteId);
+
+        ProgresoSeccion progreso = repository
+            .findByUsuarioIdAndSeccionCodigo(estudianteId, seccionCodigo)
+            .orElse(ProgresoSeccion.builder()
+                .usuarioId(estudianteId)
+                .seccionCodigo(seccionCodigo)
+                .estado("sin_avances")
+                .porcentajeCompletado(0)
+                .build());
+
+        progreso.setEstadoProfesor(estadoProfesor);
+
+        ProgresoSeccion guardado = repository.save(progreso);
+
+        log.info("Estado de profesor actualizado exitosamente para sección {} del estudiante {}",
+                 seccionCodigo, estudianteId);
+
+        return ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
+            .seccionCodigo(guardado.getSeccionCodigo())
+            .estado(guardado.getEstado())
+            .porcentaje(guardado.getPorcentajeCompletado())
+            .estadoProfesor(guardado.getEstadoProfesor())
+            .build();
+    }
+
+    /**
+     * Limpia el estado asignado por el profesor, dejando solo el estado calculado.
+     */
+    public ProgresoUsuarioDTO.ProgresoSeccionDTO limpiarEstadoProfesor(
+            Integer estudianteId,
+            String seccionCodigo) {
+        return actualizarEstadoProfesor(estudianteId, seccionCodigo, null);
     }
 
     private int calcularPorcentaje(String estado) {

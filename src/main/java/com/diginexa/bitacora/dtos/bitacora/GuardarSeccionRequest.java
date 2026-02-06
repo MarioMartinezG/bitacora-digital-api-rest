@@ -22,4 +22,6 @@ public class GuardarSeccionRequest {
     private Map<String, Object> datos;
 
     private String estadoAvance;
+
+    private Integer progresoPorcentaje;
 }

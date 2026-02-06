@@ -1,9 +1,13 @@
 package com.diginexa.bitacora.services;
 
 import com.diginexa.bitacora.dtos.bitacora.GuardarSeccionRequest;
+import com.diginexa.bitacora.dtos.bitacora.ProgresoUsuarioDTO;
 import com.diginexa.bitacora.dtos.bitacora.RespuestaSeccionDTO;
 import com.diginexa.bitacora.entities.RespuestaSeccion;
+import com.diginexa.bitacora.entities.Usuario;
 import com.diginexa.bitacora.repositories.RespuestaSeccionRepository;
+import com.diginexa.bitacora.repositories.TutorEstudianteRepository;
+import com.diginexa.bitacora.repositories.UsuarioRepository;
 import com.diginexa.bitacora.validation.SeccionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +28,10 @@ public class BitacoraSeccionService {
     private final RespuestaSeccionRepository respuestaRepository;
     private final SeccionValidator validator;
     private final ProgresoService progresoService;
+    private final NotificacionEventPublisher eventPublisher;
+    private final ConfiguracionNotificacionService configuracionService;
+    private final TutorEstudianteRepository tutorEstudianteRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @Transactional(readOnly = true)
     public RespuestaSeccionDTO obtenerRespuesta(Integer usuarioId, String seccionCodigo) {
@@ -44,6 +52,10 @@ public class BitacoraSeccionService {
     public RespuestaSeccionDTO guardarRespuesta(GuardarSeccionRequest request) {
         log.info("Guardando respuesta para usuario {} en sección {}",
                  request.getUsuarioId(), request.getSeccionCodigo());
+
+        // Obtener progreso anterior para comparar después del guardado
+        ProgresoUsuarioDTO progresoAnterior = progresoService.obtenerProgresoCompleto(request.getUsuarioId());
+        int porcentajeAnterior = progresoAnterior.getPorcentajeTotal();
 
         // Validar datos según tipo de sección (validación básica)
         List<String> errores = validator.validarSinExcepcion(
@@ -82,10 +94,70 @@ public class BitacoraSeccionService {
         progresoService.actualizarEstadoSeccion(
             request.getUsuarioId(),
             request.getSeccionCodigo(),
-            estado
+            estado,
+            request.getProgresoPorcentaje()
         );
 
+        // Verificar si se alcanzó el umbral de progreso para notificar al tutor
+        verificarYNotificarUmbral(request.getUsuarioId(), porcentajeAnterior);
+
         return convertToDTO(guardada);
+    }
+
+    /**
+     * Verifica si el estudiante alcanzó el umbral de progreso configurado
+     * y notifica a su tutor asignado.
+     */
+    private void verificarYNotificarUmbral(Integer estudianteId, int porcentajeAnterior) {
+        try {
+            // Obtener umbral configurado
+            int umbral = configuracionService.getUmbralProgresoNotificacion();
+
+            // Obtener progreso actual después del guardado
+            ProgresoUsuarioDTO progresoActual = progresoService.obtenerProgresoCompleto(estudianteId);
+            int porcentajeActual = progresoActual.getPorcentajeTotal();
+
+            log.debug("Verificando umbral: anterior={}%, actual={}%, umbral={}%",
+                     porcentajeAnterior, porcentajeActual, umbral);
+
+            // Verificar si cruzó el umbral (estaba debajo y ahora está arriba o igual)
+            if (porcentajeAnterior < umbral && porcentajeActual >= umbral) {
+                log.info("Estudiante {} alcanzó el umbral de {}% (progreso actual: {}%)",
+                        estudianteId, umbral, porcentajeActual);
+
+                // Buscar tutor asignado
+                Optional<Usuario> tutorOpt = tutorEstudianteRepository.findTutorByEstudianteId(estudianteId);
+
+                if (tutorOpt.isPresent()) {
+                    Usuario tutor = tutorOpt.get();
+
+                    // Obtener nombre del estudiante
+                    String nombreEstudiante = usuarioRepository.findById(estudianteId)
+                        .map(Usuario::getNombre)
+                        .orElse("Estudiante #" + estudianteId);
+
+                    // Publicar evento de umbral alcanzado
+                    eventPublisher.publicarUmbralAlcanzado(
+                        tutor.getId(),
+                        estudianteId,
+                        nombreEstudiante,
+                        "progreso-general",  // Sección especial para progreso general
+                        "Progreso General del Curso",
+                        porcentajeActual
+                    );
+
+                    log.info("Notificación de umbral enviada al tutor {} para estudiante {}",
+                            tutor.getId(), estudianteId);
+                } else {
+                    log.warn("Estudiante {} no tiene tutor asignado, no se enviará notificación de umbral",
+                            estudianteId);
+                }
+            }
+        } catch (Exception e) {
+            // No fallar el guardado si hay error en la notificación
+            log.error("Error al verificar/notificar umbral para estudiante {}: {}",
+                     estudianteId, e.getMessage(), e);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -126,12 +198,20 @@ public class BitacoraSeccionService {
     }
 
     private RespuestaSeccionDTO convertToDTO(RespuestaSeccion entidad) {
+        // Obtener datos de progreso para incluir estadoProfesor y porcentaje
+        var progreso = progresoService.obtenerProgresoSeccion(
+            entidad.getUsuarioId(),
+            entidad.getSeccionCodigo()
+        );
+
         return RespuestaSeccionDTO.builder()
             .id(entidad.getId())
             .usuarioId(entidad.getUsuarioId())
             .seccionCodigo(entidad.getSeccionCodigo())
             .datos(entidad.getDatos())
             .estadoAvance(entidad.getEstadoAvance())
+            .estadoProfesor(progreso.getEstadoProfesor())
+            .progresoPorcentaje(progreso.getPorcentaje())
             .fechaActualizacion(entidad.getFechaActualizacion())
             .build();
     }
