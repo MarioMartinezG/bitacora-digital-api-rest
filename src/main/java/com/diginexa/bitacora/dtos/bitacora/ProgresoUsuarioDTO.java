@@ -23,5 +23,10 @@ public class ProgresoUsuarioDTO {
         private String seccionCodigo;
         private String estado;
         private Integer porcentaje;
+        /**
+         * Estado asignado por el profesor/tutor.
+         * Si está presente, el frontend debería mostrar este estado en lugar del calculado.
+         */
+        private String estadoProfesor;
     }
 }
