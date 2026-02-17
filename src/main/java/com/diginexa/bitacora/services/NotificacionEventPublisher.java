@@ -1,10 +1,7 @@
 package com.diginexa.bitacora.services;
 
 import com.diginexa.bitacora.constants.PrioridadNotificacion;
-import com.diginexa.bitacora.events.RespuestaSolicitudEvent;
-import com.diginexa.bitacora.events.SolicitudSesionEvent;
-import com.diginexa.bitacora.events.UmbralAlcanzadoEvent;
-import com.diginexa.bitacora.events.VencimientoProximoEvent;
+import com.diginexa.bitacora.events.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -160,6 +157,30 @@ public class NotificacionEventPublisher {
 
         log.info("Publicando evento de respuesta a solicitud {} para estudiante {} - estado: {}",
                 solicitudId, estudianteId, estado);
+        eventPublisher.publishEvent(event);
+    }
+
+    /**
+     * Publica un evento de comentario del tutor en una sub-sección.
+     */
+    public void publicarComentarioTutor(
+            Integer estudianteId,
+            Integer tutorId,
+            String nombreTutor,
+            String seccionCodigo,
+            String subseccionCodigo) {
+
+        ComentarioTutorEvent event = new ComentarioTutorEvent(
+                this,
+                estudianteId,
+                tutorId,
+                nombreTutor,
+                seccionCodigo,
+                subseccionCodigo
+        );
+
+        log.info("Publicando evento de comentario tutor {} para estudiante {} en {}/{}",
+                tutorId, estudianteId, seccionCodigo, subseccionCodigo);
         eventPublisher.publishEvent(event);
     }
 }

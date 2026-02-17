@@ -78,3 +78,31 @@ INSERT INTO teia.configuracion_notificaciones (clave, valor, descripcion, tipo_d
     ('WEBSOCKET_HABILITADO', 'true', 'Habilitar notificaciones en tiempo real via WebSocket', 'BOOLEAN'),
     ('HORA_EJECUCION_SCHEDULER', '08:00', 'Hora de ejecución del scheduler de vencimientos (HH:mm)', 'STRING')
 ON CONFLICT (clave) DO NOTHING;
+
+-- =============================================
+-- DATOS - Menú del Tutor (role_id=2)
+-- =============================================
+
+-- Menu: Inicio (Tutor)
+INSERT INTO teia.menus (id, label, icon, orden) VALUES (3, 'Inicio', NULL, 1);
+INSERT INTO teia.menu_roles (menu_id, rol_id) VALUES (3, 2);
+
+INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden) VALUES
+    (20, 3, 'Dashboard', 'pi pi-fw pi-clipboard', '/home', 1),
+    (21, 3, 'Notificaciones', 'pi pi-bell', '/home/notificaciones', 2);
+
+INSERT INTO teia.menu_item_roles (menu_item_id, rol_id) VALUES (20, 2), (21, 2);
+
+-- Menu: Gestión Tutor
+INSERT INTO teia.menus (id, label, icon, orden) VALUES (4, 'Gestión de Estudiantes', NULL, 2);
+INSERT INTO teia.menu_roles (menu_id, rol_id) VALUES (4, 2);
+
+INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden) VALUES
+    (22, 4, 'Revisión de Respuestas', 'pi pi-fw pi-eye', '/home/tutor/revision', 1),
+    (23, 4, 'Solicitudes de Sesión', 'pi pi-calendar-clock', '/home/tutor/solicitudes-sesion', 2),
+    (24, 4, 'Configuración de Alertas', 'pi pi-fw pi-cog', '/home/tutor/configuracion-alertas', 3);
+
+INSERT INTO teia.menu_item_roles (menu_item_id, rol_id) VALUES (22, 2), (23, 2), (24, 2);
+
+SELECT setval(pg_get_serial_sequence('teia.menus', 'id'), (SELECT MAX(id) FROM teia.menus));
+SELECT setval(pg_get_serial_sequence('teia.menu_items', 'id'), (SELECT MAX(id) FROM teia.menu_items));
