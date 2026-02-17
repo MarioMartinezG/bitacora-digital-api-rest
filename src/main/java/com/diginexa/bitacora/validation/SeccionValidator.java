@@ -17,18 +17,18 @@ public class SeccionValidator {
 
     static {
         // Factores Situacionales - preguntas obligatorias
-        CAMPOS_REQUERIDOS.put(SeccionCodigos.FACTORES_SITUACIONALES, Arrays.asList(
+        CAMPOS_REQUERIDOS.put(SeccionCodigos.FACTORES, Arrays.asList(
             "pregunta1", "pregunta2", "pregunta3", "pregunta4", "pregunta5",
             "pregunta6", "pregunta7", "pregunta8", "pregunta9"
         ));
 
         // Ajustes Razonables
-        CAMPOS_REQUERIDOS.put(SeccionCodigos.AJUSTES_RAZONABLES, Arrays.asList(
+        CAMPOS_REQUERIDOS.put(SeccionCodigos.AJUSTES, Arrays.asList(
             "ajustes"
         ));
 
-        // Caracteriza Justificación
-        CAMPOS_REQUERIDOS.put(SeccionCodigos.CARACTERIZA_JUSTIFICACION, Arrays.asList(
+        // Caracteriza
+        CAMPOS_REQUERIDOS.put(SeccionCodigos.CARACTERIZA, Arrays.asList(
             "respuesta1", "respuesta2", "respuesta3"
         ));
     }
@@ -56,10 +56,10 @@ public class SeccionValidator {
 
         // Validaciones específicas por sección
         switch (seccionCodigo) {
-            case SeccionCodigos.FACTORES_SITUACIONALES:
+            case SeccionCodigos.FACTORES:
                 validarFactoresSituacionales(datos);
                 break;
-            case SeccionCodigos.CARACTERIZA_JUSTIFICACION:
+            case SeccionCodigos.CARACTERIZA:
                 validarJustificacion(datos);
                 break;
             default:

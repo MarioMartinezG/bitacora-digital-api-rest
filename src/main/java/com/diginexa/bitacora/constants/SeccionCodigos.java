@@ -12,21 +12,18 @@ public final class SeccionCodigos {
 
     // ========== MÓDULO 1: CARACTERIZA TU ASIGNATURA ==========
 
-    /** Identificación de la asignatura (datos básicos) */
-    public static final String CARACTERIZA_IDENTIFICACION = "caracteriza-identificacion";
-
-    /** Justificación de la asignatura (3 preguntas) */
-    public static final String CARACTERIZA_JUSTIFICACION = "caracteriza-justificacion";
+    /** Caracteriza tu asignatura (identificación, justificación, contenidos) */
+    public static final String CARACTERIZA = "caracteriza";
 
     // ========== MÓDULO 2: FACTORES SITUACIONALES ==========
 
     /** 17 preguntas sobre contexto, estudiantes y docente */
-    public static final String FACTORES_SITUACIONALES = "factores-situacionales";
+    public static final String FACTORES = "factores";
 
     // ========== MÓDULO 3: AJUSTES RAZONABLES ==========
 
     /** Ajustes desde contenidos, actividades, evaluación y dinámicas */
-    public static final String AJUSTES_RAZONABLES = "ajustes-razonables";
+    public static final String AJUSTES = "ajustes";
 
     // ========== MÓDULO 4: RAP Y RAC ==========
 
@@ -36,17 +33,17 @@ public final class SeccionCodigos {
     // ========== MÓDULO 5: ACTIVIDADES DE APRENDIZAJE ==========
 
     /** Actividades de aprendizaje del curso */
-    public static final String ACTIVIDADES_APRENDIZAJE = "actividades-aprendizaje";
+    public static final String ACTIVIDADES = "actividades";
 
     // ========== MÓDULO 6: CÓMO EVALUARÉ ==========
 
     /** Estrategias de evaluación */
-    public static final String COMO_EVALUARE = "como-evaluare";
+    public static final String EVALUACION = "evaluacion";
 
     // ========== MÓDULO 7: SECUENCIA DEL CURSO ==========
 
     /** Secuencia y cronograma del curso */
-    public static final String SECUENCIA_CURSO = "secuencia-curso";
+    public static final String SECUENCIA = "secuencia";
 
     // ========== MÓDULO 8: BIBLIOGRAFÍA ==========
 
@@ -55,16 +52,15 @@ public final class SeccionCodigos {
 
     // ========== LISTA COMPLETA ==========
 
-    /** Array con todos los códigos válidos de secciones */
+    /** Array con todos los códigos válidos de secciones (coincide con los códigos del frontend) */
     public static final String[] TODOS = {
-        CARACTERIZA_IDENTIFICACION,
-        CARACTERIZA_JUSTIFICACION,
-        FACTORES_SITUACIONALES,
-        AJUSTES_RAZONABLES,
+        CARACTERIZA,
+        FACTORES,
+        AJUSTES,
         RAP_RAC,
-        ACTIVIDADES_APRENDIZAJE,
-        COMO_EVALUARE,
-        SECUENCIA_CURSO,
+        ACTIVIDADES,
+        EVALUACION,
+        SECUENCIA,
         BIBLIOGRAFIA
     };
 

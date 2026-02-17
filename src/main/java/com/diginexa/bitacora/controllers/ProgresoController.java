@@ -1,6 +1,7 @@
 package com.diginexa.bitacora.controllers;
 
 import com.diginexa.bitacora.dtos.bitacora.ActualizarEstadoProfesorRequest;
+import com.diginexa.bitacora.dtos.bitacora.EstudianteProgresoResumenDTO;
 import com.diginexa.bitacora.dtos.bitacora.ProgresoUsuarioDTO;
 import com.diginexa.bitacora.services.ProgresoService;
 import jakarta.validation.Valid;
@@ -9,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/bitacora/progreso")
@@ -80,6 +83,19 @@ public class ProgresoController {
             request.getEstadoProfesor()
         );
 
+        return ResponseEntity.ok(progreso);
+    }
+
+    /**
+     * Obtener progreso de todos los estudiantes asignados a un tutor.
+     * GET /api/bitacora/progreso/tutor/{tutorId}/estudiantes
+     */
+    @GetMapping("/tutor/{tutorId}/estudiantes")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
+    public ResponseEntity<List<EstudianteProgresoResumenDTO>> obtenerProgresoEstudiantesPorTutor(
+            @PathVariable Integer tutorId) {
+        log.info("GET /api/bitacora/progreso/tutor/{}/estudiantes", tutorId);
+        List<EstudianteProgresoResumenDTO> progreso = progresoService.obtenerProgresoEstudiantesPorTutor(tutorId);
         return ResponseEntity.ok(progreso);
     }
 

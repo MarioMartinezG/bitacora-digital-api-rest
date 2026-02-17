@@ -1,9 +1,12 @@
 package com.diginexa.bitacora.services;
 
 import com.diginexa.bitacora.constants.SeccionCodigos;
+import com.diginexa.bitacora.dtos.bitacora.EstudianteProgresoResumenDTO;
 import com.diginexa.bitacora.dtos.bitacora.ProgresoUsuarioDTO;
 import com.diginexa.bitacora.entities.ProgresoSeccion;
+import com.diginexa.bitacora.entities.Usuario;
 import com.diginexa.bitacora.repositories.ProgresoSeccionRepository;
+import com.diginexa.bitacora.repositories.TutorEstudianteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +24,7 @@ import java.util.Map;
 public class ProgresoService {
 
     private final ProgresoSeccionRepository repository;
+    private final TutorEstudianteRepository tutorEstudianteRepository;
 
     @Transactional(readOnly = true)
     public ProgresoUsuarioDTO obtenerProgresoCompleto(Integer usuarioId) {
@@ -28,7 +33,6 @@ public class ProgresoService {
         List<ProgresoSeccion> progresos = repository.findByUsuarioId(usuarioId);
 
         Map<String, ProgresoUsuarioDTO.ProgresoSeccionDTO> secciones = new HashMap<>();
-        int completadas = 0;
         int totalSecciones = SeccionCodigos.TODOS.length;
 
         // Inicializar todas las secciones con estado sin_avances
@@ -41,6 +45,7 @@ public class ProgresoService {
         }
 
         // Actualizar con datos reales
+        int sumaPorcentajes = 0;
         for (ProgresoSeccion p : progresos) {
             ProgresoUsuarioDTO.ProgresoSeccionDTO dto = ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
                 .seccionCodigo(p.getSeccionCodigo())
@@ -49,16 +54,15 @@ public class ProgresoService {
                 .estadoProfesor(p.getEstadoProfesor())
                 .build();
             secciones.put(p.getSeccionCodigo(), dto);
-
-            // Usar estadoProfesor si existe, sino el estado calculado
-            String estadoEfectivo = p.getEstadoProfesor() != null ? p.getEstadoProfesor() : p.getEstado();
-            if ("completado".equals(estadoEfectivo)) {
-                completadas++;
-            }
+            sumaPorcentajes += p.getPorcentajeCompletado();
         }
 
-        int porcentajeTotal = (int) ((completadas * 100.0) / totalSecciones);
-        String estadoGeneral = calcularEstadoGeneral(completadas, totalSecciones);
+        // Promediar porcentajes reales (mismo cálculo que el frontend)
+        int porcentajeTotal = totalSecciones > 0
+            ? Math.round((float) sumaPorcentajes / totalSecciones)
+            : 0;
+
+        String estadoGeneral = calcularEstadoDesdeProgreso(porcentajeTotal);
 
         return ProgresoUsuarioDTO.builder()
             .usuarioId(usuarioId)
@@ -166,6 +170,28 @@ public class ProgresoService {
         return actualizarEstadoProfesor(estudianteId, seccionCodigo, null);
     }
 
+    /**
+     * Obtiene el progreso de todos los estudiantes asignados a un tutor.
+     */
+    @Transactional(readOnly = true)
+    public List<EstudianteProgresoResumenDTO> obtenerProgresoEstudiantesPorTutor(Integer tutorId) {
+        log.debug("Obteniendo progreso de estudiantes para tutor {}", tutorId);
+
+        List<Usuario> estudiantes = tutorEstudianteRepository.findEstudiantesByTutorId(tutorId);
+
+        return estudiantes.stream().map(estudiante -> {
+            ProgresoUsuarioDTO progreso = obtenerProgresoCompleto(estudiante.getId());
+            return EstudianteProgresoResumenDTO.builder()
+                    .estudianteId(estudiante.getId())
+                    .nombreEstudiante(estudiante.getNombre())
+                    .correoEstudiante(estudiante.getCorreo())
+                    .porcentajeTotal(progreso.getPorcentajeTotal())
+                    .estadoGeneral(progreso.getEstadoGeneral())
+                    .secciones(progreso.getSecciones())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
     private int calcularPorcentaje(String estado) {
         return switch (estado) {
             case "completado" -> 100;
@@ -174,10 +200,10 @@ public class ProgresoService {
         };
     }
 
-    private String calcularEstadoGeneral(int completadas, int total) {
-        if (completadas == 0) {
+    private String calcularEstadoDesdeProgreso(int porcentaje) {
+        if (porcentaje <= 0) {
             return "sin_avances";
-        } else if (completadas == total) {
+        } else if (porcentaje >= 100) {
             return "completado";
         } else {
             return "en_desarrollo";

@@ -315,3 +315,90 @@ COMMENT ON TABLE teia.solicitudes_sesion IS 'Solicitudes de sesión de estudiant
 COMMENT ON COLUMN teia.notificaciones.tipo IS 'Tipo: VENCIMIENTO_PROXIMO, SOLICITUD_SESION, RESPUESTA_SOLICITUD, UMBRAL_ALCANZADO';
 COMMENT ON COLUMN teia.notificaciones.prioridad IS 'Prioridad: CRITICO (rojo), ALERTA (naranja), INFO (azul), SUCCESS (verde)';
 COMMENT ON COLUMN teia.notificaciones.datos_adicionales IS 'JSON con datos contextuales (seccion, estudiante, etc.)';
+
+-- =============================================
+-- TABLAS - Módulos del Tutor v3.0
+-- =============================================
+
+-- Comentarios del tutor por sub-sección
+CREATE TABLE IF NOT EXISTS teia.comentarios_subseccion (
+    id SERIAL PRIMARY KEY,
+    tutor_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    estudiante_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    seccion_codigo VARCHAR(100) NOT NULL,
+    subseccion_codigo VARCHAR(100) NOT NULL,
+    comentario TEXT NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT NOW()
+);
+
+-- Estado asignado por el tutor a nivel de sub-sección
+CREATE TABLE IF NOT EXISTS teia.estado_tutor_subseccion (
+    id SERIAL PRIMARY KEY,
+    tutor_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    estudiante_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    seccion_codigo VARCHAR(100) NOT NULL,
+    subseccion_codigo VARCHAR(100) NOT NULL,
+    estado VARCHAR(20) NOT NULL CHECK (estado IN ('sin_avances', 'en_desarrollo', 'completado')),
+    fecha_actualizacion TIMESTAMP DEFAULT NOW(),
+    UNIQUE (estudiante_id, seccion_codigo, subseccion_codigo)
+);
+
+-- Momentos: agrupación de módulos con fechas límite
+CREATE TABLE IF NOT EXISTS teia.momentos (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(200) NOT NULL,
+    descripcion TEXT,
+    fecha_limite DATE NOT NULL,
+    activo BOOLEAN DEFAULT true,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMP DEFAULT NOW()
+);
+
+-- Relación momento-secciones
+CREATE TABLE IF NOT EXISTS teia.momento_secciones (
+    id SERIAL PRIMARY KEY,
+    momento_id INT NOT NULL REFERENCES teia.momentos(id) ON DELETE CASCADE,
+    seccion_codigo VARCHAR(100) NOT NULL,
+    UNIQUE (momento_id, seccion_codigo)
+);
+
+-- Actualizar constraint de notificaciones.tipo para incluir todos los tipos
+ALTER TABLE teia.notificaciones DROP CONSTRAINT IF EXISTS notificaciones_tipo_check;
+ALTER TABLE teia.notificaciones ADD CONSTRAINT notificaciones_tipo_check
+    CHECK (tipo IN ('VENCIMIENTO_PROXIMO', 'SOLICITUD_SESION', 'RESPUESTA_SOLICITUD', 'UMBRAL_ALCANZADO', 'COMENTARIO_TUTOR', 'ESTADO_TUTOR_ACTUALIZADO'));
+
+-- =============================================
+-- ÍNDICES - Módulos del Tutor
+-- =============================================
+
+CREATE INDEX IF NOT EXISTS idx_comentarios_subseccion_estudiante ON teia.comentarios_subseccion(estudiante_id, seccion_codigo, subseccion_codigo);
+CREATE INDEX IF NOT EXISTS idx_comentarios_subseccion_tutor ON teia.comentarios_subseccion(tutor_id);
+
+CREATE INDEX IF NOT EXISTS idx_estado_tutor_sub_estudiante ON teia.estado_tutor_subseccion(estudiante_id, seccion_codigo);
+
+CREATE INDEX IF NOT EXISTS idx_momento_secciones_momento ON teia.momento_secciones(momento_id);
+
+-- =============================================
+-- TRIGGERS - Módulos del Tutor
+-- =============================================
+
+-- Trigger para momentos
+DROP TRIGGER IF EXISTS trigger_update_momentos ON teia.momentos;
+CREATE TRIGGER trigger_update_momentos
+    BEFORE UPDATE ON teia.momentos
+    FOR EACH ROW EXECUTE FUNCTION teia.update_fecha_actualizacion();
+
+-- Trigger para estado_tutor_subseccion
+DROP TRIGGER IF EXISTS trigger_update_estado_tutor_subseccion ON teia.estado_tutor_subseccion;
+CREATE TRIGGER trigger_update_estado_tutor_subseccion
+    BEFORE UPDATE ON teia.estado_tutor_subseccion
+    FOR EACH ROW EXECUTE FUNCTION teia.update_fecha_actualizacion();
+
+-- =============================================
+-- COMENTARIOS - Módulos del Tutor
+-- =============================================
+
+COMMENT ON TABLE teia.comentarios_subseccion IS 'Historial de comentarios del tutor por sub-sección de bitácora.';
+COMMENT ON TABLE teia.estado_tutor_subseccion IS 'Estado asignado por el tutor a nivel de sub-sección.';
+COMMENT ON TABLE teia.momentos IS 'Agrupación de módulos de bitácora en momentos con fechas límite.';
+COMMENT ON TABLE teia.momento_secciones IS 'Relación entre momentos y secciones de bitácora.';
