@@ -2,7 +2,7 @@
 
 **Proyecto:** Bitacora Digital API REST
 **Stack:** Spring Boot 3.5.5 · Java 21 · PostgreSQL 15
-**Última actualización:** 2026-02-24
+**Última actualización:** 2026-02-25
 
 ---
 
@@ -14,17 +14,22 @@ GitHub (develop)
      └──push──> Cloud Build ──build──> Artifact Registry
                                               │
                                          deploy──> Cloud Run (bitacora-api)
-                                                          │
-                                              Cloud SQL Auth Proxy (socket Unix)
-                                                          │
-                                                    Cloud SQL (PostgreSQL 15)
+                                                          │           │
+                                                     api (8080)  cloud-sql-proxy
+                                                                      │ TCP localhost:5432
+                                                               Cloud SQL (PostgreSQL 15)
 
 Secret Manager ──────────────────────────────────────────┘
-(DB_URL, DB_PASSWORD, JWT_SECRET, MAIL_USERNAME, MAIL_PASSWORD)
+(DB_PASSWORD, JWT_SECRET, MAIL_USERNAME, MAIL_PASSWORD)
 ```
 
 **Flujo de CI/CD:** cada push a la rama `develop` dispara Cloud Build automáticamente.
 El build tarda ~3 minutos. La URL pública de Cloud Run se actualiza sin downtime.
+
+**Multi-container:** Cloud Run corre en gen2 con dos contenedores: el API Spring Boot
+y el Cloud SQL Auth Proxy como sidecar. El proxy autentica con Cloud SQL via la
+Compute Engine SA y expone PostgreSQL en `localhost:5432` via TCP plano, sin
+dependencias GCP en el código de la aplicación.
 
 ---
 
@@ -119,17 +124,19 @@ gcloud sql connect bitacora-db --user=teia_user --database=teia_db
 
 Reemplaza los valores entre `<...>` con los reales antes de ejecutar.
 
-```bash
-# DB_URL con connection name de Cloud SQL (reemplaza PROJECT_ID)
-echo -n "jdbc:postgresql:///teia_db?cloudSqlInstance=PROJECT_ID:us-central1:bitacora-db&socketFactory=com.google.cloud.sql.postgres.SocketFactory&ipTypes=PUBLIC,PRIVATE" \
-  | gcloud secrets create bitacora-db-url --data-file=-
+> **Nota:** `DB_URL` ya NO se gestiona como secreto. El valor
+> `jdbc:postgresql://127.0.0.1:5432/teia_db` está fijo en `cloudrun-service.yaml`
+> porque el Cloud SQL Auth Proxy sidecar expone la BD en localhost.
 
+```bash
 # Contraseña de la base de datos
 echo -n "<TU_PASSWORD_SEGURO>" \
   | gcloud secrets create bitacora-db-password --data-file=-
 
-# JWT Secret (generado aleatoriamente)
-openssl rand -base64 64 | gcloud secrets create bitacora-jwt-secret --data-file=-
+# JWT Secret — IMPORTANTE: el | tr -d '\n' elimina el salto de línea final,
+# que causaría un error "Illegal base64 character" al arrancar la aplicación.
+openssl rand -base64 64 | tr -d '\n' \
+  | gcloud secrets create bitacora-jwt-secret --data-file=-
 
 # Correo SMTP (cuenta de Gmail)
 echo -n "<correo@gmail.com>" \
@@ -145,41 +152,53 @@ echo -n "<APP_PASSWORD>" \
 
 ```bash
 gcloud secrets list
+# Debe mostrar: bitacora-db-password, bitacora-jwt-secret,
+#               bitacora-mail-username, bitacora-mail-password
 ```
 
 ---
 
 ## Paso 6 — Configurar permisos IAM
 
+> **Importante:** el trigger de Cloud Build ejecuta los pasos usando la
+> **Compute Engine default SA** (`PROJECT_NUMBER-compute@developer.gserviceaccount.com`),
+> no la Cloud Build SA. Todos los roles deben otorgarse a esa cuenta.
+
 ```bash
 PROJECT_ID=$(gcloud config get-value project)
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+COMPUTE_SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+CLOUDBUILD_SA="$PROJECT_NUMBER@cloudbuild.gserviceaccount.com"
 
-# Cloud Build puede desplegar en Cloud Run
+# Compute Engine SA: desplegar en Cloud Run
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
+  --member="serviceAccount:$COMPUTE_SA" \
   --role="roles/run.admin"
 
-# Cloud Build puede leer secretos
+# Compute Engine SA: leer secretos
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
+  --member="serviceAccount:$COMPUTE_SA" \
   --role="roles/secretmanager.secretAccessor"
 
-# Cloud Build puede actuar como la cuenta de servicio de Cloud Run
-gcloud iam service-accounts add-iam-policy-binding \
-  $PROJECT_NUMBER-compute@developer.gserviceaccount.com \
-  --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
-  --role="roles/iam.serviceAccountUser"
-
-# Cloud Run puede conectarse a Cloud SQL
+# Compute Engine SA: escribir logs (requerido por CLOUD_LOGGING_ONLY)
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+  --member="serviceAccount:$COMPUTE_SA" \
+  --role="roles/logging.logWriter"
+
+# Compute Engine SA: conectarse a Cloud SQL (para el sidecar proxy)
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:$COMPUTE_SA" \
   --role="roles/cloudsql.client"
 
-# Cloud Run puede leer secretos
+# Compute Engine SA: subir imágenes a Artifact Registry
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
-  --role="roles/secretmanager.secretAccessor"
+  --member="serviceAccount:$COMPUTE_SA" \
+  --role="roles/artifactregistry.writer"
+
+# Cloud Build SA: actuar como Compute Engine SA (iam.serviceAccountUser)
+gcloud iam service-accounts add-iam-policy-binding $COMPUTE_SA \
+  --member="serviceAccount:$CLOUDBUILD_SA" \
+  --role="roles/iam.serviceAccountUser"
 ```
 
 ---
@@ -202,8 +221,9 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 | Variable | Valor |
 |---|---|
 | `_CLOUD_SQL_CONN` | `PROJECT_ID:us-central1:bitacora-db` |
-| `_DB_USERNAME` | `teia_user` |
 | `_REGION` | `us-central1` |
+
+> Reemplaza `PROJECT_ID` con el ID real del proyecto GCP.
 
 ---
 
@@ -213,7 +233,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 
 ```bash
 gcloud builds submit --config=cloudbuild.yaml \
-  --substitutions=_CLOUD_SQL_CONN="PROJECT_ID:us-central1:bitacora-db",_DB_USERNAME="teia_user",_REGION="us-central1"
+  --substitutions=_CLOUD_SQL_CONN="PROJECT_ID:us-central1:bitacora-db",_REGION="us-central1"
 ```
 
 ### Opción B: Push a develop (trigger automático)
@@ -232,6 +252,11 @@ git push origin develop
 gcloud run services describe bitacora-api \
   --region=us-central1 \
   --format="value(status.url)"
+
+# Verificar que los dos contenedores estén activos (api + cloud-sql-proxy)
+gcloud run services describe bitacora-api \
+  --region=us-central1 \
+  --format="value(spec.template.spec.containers[].name)"
 
 # Ver logs en tiempo real
 gcloud logging tail \
@@ -259,8 +284,8 @@ La API estará disponible en: `https://bitacora-api-XXXX-uc.a.run.app`
 | Variable | Origen | Descripción |
 |---|---|---|
 | `PORT` | Cloud Run (automático) | Puerto del servidor |
-| `DB_USERNAME` | Env var | Usuario de PostgreSQL |
-| `DB_URL` | Secret Manager | JDBC URL con Cloud SQL socket |
+| `DB_URL` | Valor fijo en `cloudrun-service.yaml` | `jdbc:postgresql://127.0.0.1:5432/teia_db` |
+| `DB_USERNAME` | Valor fijo en `cloudrun-service.yaml` | Usuario de PostgreSQL |
 | `DB_PASSWORD` | Secret Manager | Contraseña de PostgreSQL |
 | `JWT_SECRET` | Secret Manager | Clave de firma JWT |
 | `MAIL_USERNAME` | Secret Manager | Cuenta de correo SMTP |
@@ -276,8 +301,8 @@ El cron configurado en `NOTIFICACIONES_SCHEDULER_CRON` debe usar UTC:
 - `0 0 13 * * ?` = 8:00 AM Colombia (13:00 UTC)
 
 ### Instancias mínimas
-El servicio está configurado con `--min-instances=1` para mantener el scheduler
-de notificaciones activo. Costo adicional: ~$3-5/mes en memoria idle.
+El servicio está configurado con `autoscaling.knative.dev/minScale: "1"` para mantener
+el scheduler de notificaciones activo. Costo adicional: ~$3-5/mes en memoria idle.
 
 ### Logs de archivo
 En Cloud Run el sistema de archivos es efímero; los logs escritos en
@@ -285,8 +310,13 @@ En Cloud Run el sistema de archivos es efímero; los logs escritos en
 todos los logs del servicio.
 
 ### WebSockets
-El servicio usa `--session-affinity` para que las conexiones WebSocket (STOMP)
-mantengan afinidad con la misma instancia.
+El servicio usa `run.googleapis.com/session-affinity: "true"` para que las
+conexiones WebSocket (STOMP) mantengan afinidad con la misma instancia.
+
+### Portabilidad
+El código de la aplicación no tiene dependencias GCP. Para desplegar en otro
+entorno basta con cambiar el valor de `DB_URL` a la URL JDBC del destino.
+El `cloudrun-service.yaml` y el `cloudbuild.yaml` son específicos de GCP.
 
 ---
 
@@ -301,8 +331,9 @@ gcloud run services update-traffic bitacora-api \
   --region=us-central1 \
   --to-revisions=REVISION_NAME=100
 
-# Actualizar un secreto
-echo -n "NUEVO_VALOR" | gcloud secrets versions add bitacora-jwt-secret --data-file=-
+# Actualizar un secreto (ejemplo: rotar el JWT secret)
+openssl rand -base64 64 | tr -d '\n' \
+  | gcloud secrets versions add bitacora-jwt-secret --data-file=-
 
 # Ver estado de Cloud SQL
 gcloud sql instances describe bitacora-db --format="value(state)"
