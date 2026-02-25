@@ -8,6 +8,7 @@
 #   _SERVICE_NAME   : bitacora-api
 #   _CLOUD_SQL_CONN : PROJECT_ID:REGION:INSTANCE_NAME
 #   _DB_USERNAME    : teia_user
+#   _PROJECT_ID     : tu-project-id (necesario para logsBucket)
 #
 # Secrets requeridos en Secret Manager (crear antes del primer deploy):
 #   bitacora-db-url       : JDBC URL con Cloud SQL socket factory
@@ -17,11 +18,14 @@
 #   bitacora-mail-password: app password de Gmail
 # =============================================================
 
+logsBucket: 'gs://${_PROJECT_ID}-cloudbuild-logs'
+
 substitutions:
   _REGION: us-central1
   _SERVICE_NAME: bitacora-api
   _CLOUD_SQL_CONN: 'PROJECT_ID:REGION:INSTANCE_NAME'  # Reemplazar en el trigger
   _DB_USERNAME: teia_user
+  _PROJECT_ID: 'tu-project-id'                        # Reemplazar en el trigger
 
 steps:
   # ── Paso 1: Build de la imagen Docker ──────────────────────────────────────
@@ -73,4 +77,4 @@ images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}:latest'
 
 options:
-  logging: CLOUD_LOGGING_ONLY
+  logging: GCS_ONLY
