@@ -28,7 +28,10 @@ VALUES
     (11, 1, 'Sesiones con tutor', 'pi pi-calendar-clock', '/home/solicitudes-sesion', 8);
 
 INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
-SELECT 1, id FROM teia.roles WHERE nombre = 'estudiante';
+SELECT mi.id, r.id
+FROM teia.menu_items mi
+JOIN teia.roles r ON r.nombre = 'estudiante'
+WHERE mi.menu_id = 1;
 
 
 -- ============================
