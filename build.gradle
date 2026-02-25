@@ -60,9 +60,8 @@ dependencies {
 	// PostgreSQL (BASE DE DATOS)
 	runtimeOnly 'org.postgresql:postgresql'
 
-	// Cloud SQL JDBC Connector - conexion segura a Cloud SQL desde Cloud Run
-	// Usa ServiceLoader (evita problemas de classloader en Spring Boot WAR)
-	implementation 'com.google.cloud.sql:cloud-sql-connector-jdbc-postgresql:1.21.0'
+	// Cloud SQL Socket Factory - conexion segura a Cloud SQL desde Cloud Run
+	runtimeOnly 'com.google.cloud.sql:postgres-socket-factory:1.21.0'
 
 	// Testing (PRUEBAS)
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
