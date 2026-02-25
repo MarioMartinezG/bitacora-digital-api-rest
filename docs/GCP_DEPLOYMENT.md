@@ -20,7 +20,8 @@ GitHub (develop)
                                                                Cloud SQL (PostgreSQL 15)
 
 Secret Manager ──────────────────────────────────────────┘
-(DB_PASSWORD, JWT_SECRET, MAIL_USERNAME, MAIL_PASSWORD)
+(DB_PASSWORD, JWT_SECRET, MAIL_USERNAME, MAIL_PASSWORD,
+ TUTOR_SERVICE_URL)
 ```
 
 **Flujo de CI/CD:** cada push a la rama `develop` dispara Cloud Build automáticamente.
@@ -146,6 +147,11 @@ echo -n "<correo@gmail.com>" \
 # Generar en: Google Account > Seguridad > Verificacion en 2 pasos > Contrasenas de aplicacion
 echo -n "<APP_PASSWORD>" \
   | gcloud secrets create bitacora-mail-password --data-file=-
+
+# URL del servicio de tutores (RunPod) — cambia cada vez que el pod se reinicia
+# Ver sección "Actualizar la URL del servicio de tutores" para gestionar cambios
+echo -n "<https://tu-url.runpod.net>" \
+  | gcloud secrets create bitacora-tutor-service-url --data-file=-
 ```
 
 ### Verificar secretos creados
@@ -153,7 +159,8 @@ echo -n "<APP_PASSWORD>" \
 ```bash
 gcloud secrets list
 # Debe mostrar: bitacora-db-password, bitacora-jwt-secret,
-#               bitacora-mail-username, bitacora-mail-password
+#               bitacora-mail-username, bitacora-mail-password,
+#               bitacora-tutor-service-url
 ```
 
 ---
@@ -290,6 +297,7 @@ La API estará disponible en: `https://bitacora-api-XXXX-uc.a.run.app`
 | `JWT_SECRET` | Secret Manager | Clave de firma JWT |
 | `MAIL_USERNAME` | Secret Manager | Cuenta de correo SMTP |
 | `MAIL_PASSWORD` | Secret Manager | App password de Gmail |
+| `TUTOR_SERVICE_URL` | Secret Manager | URL base del servicio de tutores (RunPod) |
 
 ---
 
@@ -320,6 +328,25 @@ El `cloudrun-service.yaml` y el `cloudbuild.yaml` son específicos de GCP.
 
 ---
 
+## Actualizar la URL del servicio de tutores (RunPod)
+
+Cuando el pod de RunPod se reinicia, su URL cambia. El proceso para actualizarla
+no requiere rebuild de imagen — solo actualizar el secreto y forzar una nueva revisión:
+
+```bash
+# 1. Actualizar el secreto con la nueva URL
+echo -n "https://nueva-url.runpod.net" \
+  | gcloud secrets versions add bitacora-tutor-service-url --data-file=-
+
+# 2. Forzar nueva revisión de Cloud Run para que lea el nuevo valor (~30 segundos)
+gcloud run services update bitacora-api --region=us-central1
+```
+
+> **Nota:** Cloud Run lee los secretos al iniciar los contenedores. Sin el paso 2,
+> el servicio seguirá usando la URL anterior hasta el próximo deploy.
+
+---
+
 ## Comandos útiles de mantenimiento
 
 ```bash
@@ -331,7 +358,7 @@ gcloud run services update-traffic bitacora-api \
   --region=us-central1 \
   --to-revisions=REVISION_NAME=100
 
-# Actualizar un secreto (ejemplo: rotar el JWT secret)
+# Rotar el JWT secret
 openssl rand -base64 64 | tr -d '\n' \
   | gcloud secrets versions add bitacora-jwt-secret --data-file=-
 

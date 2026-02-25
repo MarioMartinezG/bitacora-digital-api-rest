@@ -61,6 +61,11 @@ spec:
                 secretKeyRef:
                   name: bitacora-mail-password
                   key: latest
+            - name: TUTOR_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: bitacora-tutor-service-url
+                  key: latest
 
         # ── Sidecar: Cloud SQL Auth Proxy ─────────────────────────────────────
         - name: cloud-sql-proxy
