@@ -1,0 +1,74 @@
+# =============================================================
+# Cloud Build - Bitacora Digital API
+# Trigger: push a la rama 'develop'
+# =============================================================
+#
+# Sustituye los valores de _CLOUD_SQL_CONN y _DB_USERNAME
+# en la configuracion del trigger en GCP Console, o directamente aqui.
+#
+# Secrets requeridos en Secret Manager (crear antes del primer deploy):
+#   - bitacora-db-url       : jdbc:postgresql:///teia_db?cloudSqlInstance=...
+#   - bitacora-db-password  : password de PostgreSQL
+#   - bitacora-jwt-secret   : clave JWT (base64, minimo 256 bits)
+#   - bitacora-mail-username: cuenta de correo SMTP
+#   - bitacora-mail-password: app password de Gmail
+# =============================================================
+
+substitutions:
+  _REGION: us-central1
+  _SERVICE_NAME: bitacora-api
+  _CLOUD_SQL_CONN: 'PROJECT_ID:REGION:INSTANCE_NAME'  # Reemplazar
+  _DB_USERNAME: teia_user
+  _IMAGE: '${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}'
+
+steps:
+  # ── Paso 1: Build de la imagen Docker ──────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build'
+    args:
+      - build
+      - -t
+      - '${_IMAGE}:$COMMIT_SHA'
+      - -t
+      - '${_IMAGE}:latest'
+      - .
+
+  # ── Paso 2: Push a Artifact Registry ───────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push'
+    waitFor: ['build']
+    args:
+      - push
+      - '--all-tags'
+      - '${_IMAGE}'
+
+  # ── Paso 3: Deploy a Cloud Run ─────────────────────────────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy'
+    waitFor: ['push']
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - '${_SERVICE_NAME}'
+      - '--image=${_IMAGE}:$COMMIT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--min-instances=1'         # Mantiene el scheduler activo
+      - '--max-instances=3'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--timeout=60s'
+      - '--concurrency=80'
+      - '--session-affinity'        # Requerido para WebSockets (STOMP)
+      - '--add-cloudsql-instances=${_CLOUD_SQL_CONN}'
+      - '--set-env-vars=DB_USERNAME=${_DB_USERNAME}'
+      - '--set-secrets=DB_URL=bitacora-db-url:latest,DB_PASSWORD=bitacora-db-password:latest,JWT_SECRET=bitacora-jwt-secret:latest,MAIL_USERNAME=bitacora-mail-username:latest,MAIL_PASSWORD=bitacora-mail-password:latest'
+      - '--allow-unauthenticated'
+
+images:
+  - '${_IMAGE}:$COMMIT_SHA'
+  - '${_IMAGE}:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

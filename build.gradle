@@ -25,6 +25,14 @@ repositories {
 	mavenCentral()
 }
 
+bootWar {
+	archiveFileName = 'app.war'
+}
+
+war {
+	enabled = false
+}
+
 dependencies {
 	// Spring Boot Starters (ESENCIALES)
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -51,6 +59,10 @@ dependencies {
 
 	// PostgreSQL (BASE DE DATOS)
 	runtimeOnly 'org.postgresql:postgresql'
+
+	// Cloud SQL Auth Proxy - conexion segura a Cloud SQL desde Cloud Run
+	// Solo activo cuando la URL incluye el parametro socketFactory
+	runtimeOnly 'com.google.cloud.sql:postgres-socket-factory:1.21.0'
 
 	// Testing (PRUEBAS)
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
