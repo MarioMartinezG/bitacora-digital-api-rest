@@ -73,4 +73,4 @@ images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}:latest'
 
 options:
-  logging: LEGACY
+  logging: CLOUD_LOGGING_ONLY
