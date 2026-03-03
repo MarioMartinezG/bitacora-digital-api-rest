@@ -17,7 +17,7 @@ public class MenuController {
     private final MenuService menuService;
 
     @GetMapping("/{roleId}")
-    @PreAuthorize("hasRole('estudiante') or hasRole('tutor') or hasRole('admin')") // Protege el endpoint
+    @PreAuthorize("hasRole('ESTUDIANTE') or hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<List<MenuDTO>> getMenuByRole(@PathVariable Integer roleId) {
         List<MenuDTO> menu = menuService.getMenuByRole(roleId);
         return ResponseEntity.ok(menu);

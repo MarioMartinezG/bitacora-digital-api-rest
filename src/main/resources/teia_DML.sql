@@ -109,3 +109,71 @@ INSERT INTO teia.menu_item_roles (menu_item_id, rol_id) VALUES (22, 2), (23, 2),
 
 SELECT setval(pg_get_serial_sequence('teia.menus', 'id'), (SELECT MAX(id) FROM teia.menus));
 SELECT setval(pg_get_serial_sequence('teia.menu_items', 'id'), (SELECT MAX(id) FROM teia.menu_items));
+
+-- =============================================
+-- DATOS - Menú del Coordinador (rol admin, id=3)
+-- =============================================
+
+-- Menu: Inicio (Coordinador)
+INSERT INTO teia.menus (id, label, icon, orden)
+VALUES (5, 'Inicio', NULL, 1)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO teia.menu_roles (menu_id, rol_id)
+SELECT 5, id FROM teia.roles WHERE nombre = 'admin'
+ON CONFLICT (menu_id, rol_id) DO NOTHING;
+
+INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
+VALUES (30, 5, 'Dashboard', 'pi pi-fw pi-chart-pie', '/home/coordinador/dashboard', 1)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
+SELECT 30, id FROM teia.roles WHERE nombre = 'admin'
+ON CONFLICT (menu_item_id, rol_id) DO NOTHING;
+
+-- Menu: Gestión del Sistema
+INSERT INTO teia.menus (id, label, icon, orden)
+VALUES (6, 'Gestión del Sistema', NULL, 2)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO teia.menu_roles (menu_id, rol_id)
+SELECT 6, id FROM teia.roles WHERE nombre = 'admin'
+ON CONFLICT (menu_id, rol_id) DO NOTHING;
+
+INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
+VALUES
+    (31, 6, 'Usuarios', 'pi pi-fw pi-users', '/home/coordinador/usuarios', 1),
+    (32, 6, 'Asignaturas', 'pi pi-fw pi-book', '/home/coordinador/asignaturas', 2)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
+SELECT mi.id, r.id
+FROM teia.menu_items mi
+JOIN teia.roles r ON r.nombre = 'admin'
+WHERE mi.id IN (31, 32)
+ON CONFLICT (menu_item_id, rol_id) DO NOTHING;
+
+-- Menu: Seguimiento
+INSERT INTO teia.menus (id, label, icon, orden)
+VALUES (7, 'Seguimiento', NULL, 3)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO teia.menu_roles (menu_id, rol_id)
+SELECT 7, id FROM teia.roles WHERE nombre = 'admin'
+ON CONFLICT (menu_id, rol_id) DO NOTHING;
+
+INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
+VALUES
+    (33, 7, 'Reportes de Progreso', 'pi pi-fw pi-chart-bar', '/home/coordinador/reportes', 1),
+    (34, 7, 'Bitácoras Globales', 'pi pi-fw pi-clipboard', '/home/coordinador/bitacoras', 2)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
+SELECT mi.id, r.id
+FROM teia.menu_items mi
+JOIN teia.roles r ON r.nombre = 'admin'
+WHERE mi.id IN (33, 34)
+ON CONFLICT (menu_item_id, rol_id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('teia.menus', 'id'), (SELECT MAX(id) FROM teia.menus));
+SELECT setval(pg_get_serial_sequence('teia.menu_items', 'id'), (SELECT MAX(id) FROM teia.menu_items));

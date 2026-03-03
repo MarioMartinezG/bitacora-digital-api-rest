@@ -79,7 +79,10 @@ public class MenuService {
         Usuario usuario = userService.findByCorreo(username);
 
         // Obtener el ID del rol del usuario
-        Integer roleId = Math.toIntExact(usuario.getRol().getId());
+        Integer roleId = usuario.getRoles().stream()
+                .min(java.util.Comparator.comparing(com.diginexa.bitacora.entities.Rol::getId))
+                .map(r -> Math.toIntExact(r.getId()))
+                .orElseThrow(() -> new RuntimeException("El usuario no tiene roles asignados"));
 
         // Usar el metodo existente para obtener el menú por rol
         return getMenuByRole(roleId);
