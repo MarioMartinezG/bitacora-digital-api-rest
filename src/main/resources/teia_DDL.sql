@@ -456,12 +456,6 @@ CREATE TABLE IF NOT EXISTS teia.usuario_roles (
     PRIMARY KEY (usuario_id, rol_id)
 );
 
--- Migrar datos existentes: copiar rol_id → usuario_roles
-INSERT INTO teia.usuario_roles (usuario_id, rol_id)
-SELECT id, rol_id FROM teia.usuarios
-WHERE rol_id IS NOT NULL
-ON CONFLICT (usuario_id, rol_id) DO NOTHING;
-
 -- Tablas para módulo coordinador: asignaturas
 CREATE TABLE IF NOT EXISTS teia.asignaturas (
     id SERIAL PRIMARY KEY,
