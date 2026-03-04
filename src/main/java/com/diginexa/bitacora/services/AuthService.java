@@ -22,6 +22,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -47,10 +51,15 @@ public class AuthService {
             String accessToken = jwtService.generateAccessToken(usuario);
             String refreshToken = jwtService.generateRefreshToken(usuario);
 
+            Integer primaryRolId = usuario.getRoles().stream()
+                    .min(Comparator.comparing(Rol::getId))
+                    .map(r -> Math.toIntExact(r.getId()))
+                    .orElse(0);
+
             UserResponse userResponse = new UserResponse(
                     usuario.getId(),
                     usuario.getCorreo(),
-                    Math.toIntExact(usuario.getRol().getId()),
+                    primaryRolId,
                     usuario.getNombre()
             );
 
@@ -82,11 +91,15 @@ public class AuthService {
                 .orElseThrow(() -> new RoleNotFoundException("Rol no encontrado"));
 
         // Crear nuevo usuario
+        Set<Rol> roles = new HashSet<>();
+        roles.add(rol);
+
         Usuario usuario = new Usuario();
         usuario.setNombre(registerRequest.getNombre());
         usuario.setCorreo(registerRequest.getCorreo().toLowerCase().trim());
         usuario.setContrasena(passwordEncoder.encode(registerRequest.getContrasena()));
-        usuario.setRol(rol);
+        usuario.setRoles(roles);
+        usuario.setActivo(true);
 
         Usuario savedUsuario = userService.save(usuario);
 
@@ -94,10 +107,15 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(savedUsuario);
         String refreshToken = jwtService.generateRefreshToken(savedUsuario);
 
+        Integer primaryRolId = savedUsuario.getRoles().stream()
+                .min(Comparator.comparing(Rol::getId))
+                .map(r -> Math.toIntExact(r.getId()))
+                .orElse(0);
+
         UserResponse userResponse = new UserResponse(
                 savedUsuario.getId(),
                 savedUsuario.getCorreo(),
-                Math.toIntExact(savedUsuario.getRol().getId()),
+                primaryRolId,
                 savedUsuario.getNombre()
         );
 
@@ -123,10 +141,15 @@ public class AuthService {
             String newAccessToken = jwtService.generateAccessToken(usuario);
             String newRefreshToken = jwtService.generateRefreshToken(usuario);
 
+            Integer primaryRolId = usuario.getRoles().stream()
+                    .min(Comparator.comparing(Rol::getId))
+                    .map(r -> Math.toIntExact(r.getId()))
+                    .orElse(0);
+
             UserResponse userResponse = new UserResponse(
                     usuario.getId(),
                     usuario.getCorreo(),
-                    Math.toIntExact(usuario.getRol().getId()),
+                    primaryRolId,
                     usuario.getNombre()
             );
 

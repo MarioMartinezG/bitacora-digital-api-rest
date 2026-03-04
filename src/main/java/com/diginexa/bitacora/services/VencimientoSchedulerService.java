@@ -94,7 +94,7 @@ public class VencimientoSchedulerService {
     private List<Usuario> obtenerEstudiantes() {
         // Buscar usuarios con rol ESTUDIANTE
         return usuarioRepository.findAll().stream()
-                .filter(u -> u.getRol() != null && "ESTUDIANTE".equalsIgnoreCase(u.getRol().getNombre()))
+                .filter(u -> u.getRoles() != null && u.getRoles().stream().anyMatch(r -> "ESTUDIANTE".equalsIgnoreCase(r.getNombre())))
                 .toList();
     }
 

@@ -22,7 +22,6 @@ CREATE TABLE teia.usuarios (
     nombre VARCHAR(100) NOT NULL,
     correo VARCHAR(150) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
-    rol_id INT REFERENCES teia.roles(id),
     fecha_creacion TIMESTAMP DEFAULT NOW()
 );
 
@@ -402,3 +401,94 @@ COMMENT ON TABLE teia.comentarios_subseccion IS 'Historial de comentarios del tu
 COMMENT ON TABLE teia.estado_tutor_subseccion IS 'Estado asignado por el tutor a nivel de sub-sección.';
 COMMENT ON TABLE teia.momentos IS 'Agrupación de módulos de bitácora en momentos con fechas límite.';
 COMMENT ON TABLE teia.momento_secciones IS 'Relación entre momentos y secciones de bitácora.';
+
+-- =============================================
+-- TABLAS - Módulo Coordinador v4.0
+-- =============================================
+
+-- Alertas del sistema generadas por el coordinador
+CREATE TABLE IF NOT EXISTS teia.alertas_sistema (
+    id SERIAL PRIMARY KEY,
+    tipo VARCHAR(50) NOT NULL,
+    prioridad VARCHAR(20) NOT NULL,
+    titulo VARCHAR(255) NOT NULL,
+    mensaje TEXT NOT NULL,
+    usuario_referencia_id INT REFERENCES teia.usuarios(id) ON DELETE SET NULL,
+    datos_adicionales JSONB DEFAULT '{}',
+    resuelta BOOLEAN NOT NULL DEFAULT false,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+    fecha_resolucion TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_alertas_sistema_resuelta ON teia.alertas_sistema(resuelta);
+CREATE INDEX IF NOT EXISTS idx_alertas_sistema_tipo ON teia.alertas_sistema(tipo);
+
+-- =============================================
+-- MIGRACIÓN v4.0 - Multi-rol y Coordinador
+-- =============================================
+
+-- Agregar columna activo a usuarios si no existe
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'teia' AND table_name = 'usuarios' AND column_name = 'activo'
+    ) THEN
+        ALTER TABLE teia.usuarios ADD COLUMN activo BOOLEAN NOT NULL DEFAULT true;
+    END IF;
+END $$;
+
+-- Agregar columna ultimo_acceso a usuarios si no existe
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'teia' AND table_name = 'usuarios' AND column_name = 'ultimo_acceso'
+    ) THEN
+        ALTER TABLE teia.usuarios ADD COLUMN ultimo_acceso TIMESTAMP;
+    END IF;
+END $$;
+
+-- Tabla de relación usuario-roles (multi-rol)
+CREATE TABLE IF NOT EXISTS teia.usuario_roles (
+    usuario_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    rol_id INT NOT NULL REFERENCES teia.roles(id) ON DELETE CASCADE,
+    PRIMARY KEY (usuario_id, rol_id)
+);
+
+-- Migrar datos existentes: copiar rol_id → usuario_roles
+INSERT INTO teia.usuario_roles (usuario_id, rol_id)
+SELECT id, rol_id FROM teia.usuarios
+WHERE rol_id IS NOT NULL
+ON CONFLICT (usuario_id, rol_id) DO NOTHING;
+
+-- Tablas para módulo coordinador: asignaturas
+CREATE TABLE IF NOT EXISTS teia.asignaturas (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(200) NOT NULL,
+    codigo VARCHAR(50) UNIQUE NOT NULL,
+    descripcion TEXT,
+    creditos INT,
+    semestre INT,
+    activa BOOLEAN NOT NULL DEFAULT true,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMP DEFAULT NOW()
+);
+
+-- Relación asignatura-estudiantes
+CREATE TABLE IF NOT EXISTS teia.asignatura_estudiantes (
+    asignatura_id INT NOT NULL REFERENCES teia.asignaturas(id) ON DELETE CASCADE,
+    estudiante_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    PRIMARY KEY (asignatura_id, estudiante_id)
+);
+
+-- Relación asignatura-tutores
+CREATE TABLE IF NOT EXISTS teia.asignatura_tutores (
+    asignatura_id INT NOT NULL REFERENCES teia.asignaturas(id) ON DELETE CASCADE,
+    tutor_id INT NOT NULL REFERENCES teia.usuarios(id) ON DELETE CASCADE,
+    PRIMARY KEY (asignatura_id, tutor_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_usuario_roles_usuario ON teia.usuario_roles(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_usuario_roles_rol ON teia.usuario_roles(rol_id);
+CREATE INDEX IF NOT EXISTS idx_asignaturas_codigo ON teia.asignaturas(codigo);

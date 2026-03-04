@@ -71,7 +71,7 @@ public class ProgresoController {
      * PATCH /api/bitacora/progreso/estado-profesor
      */
     @PatchMapping("/estado-profesor")
-    @PreAuthorize("hasRole('tutor') or hasRole('admin')")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ProgresoUsuarioDTO.ProgresoSeccionDTO> actualizarEstadoProfesor(
             @RequestBody @Valid ActualizarEstadoProfesorRequest request) {
         log.info("PATCH /api/bitacora/progreso/estado-profesor - Estudiante: {}, Sección: {}, Estado: {}",
@@ -106,7 +106,7 @@ public class ProgresoController {
      * DELETE /api/bitacora/progreso/estado-profesor/usuario/{estudianteId}/seccion/{seccionCodigo}
      */
     @DeleteMapping("/estado-profesor/usuario/{estudianteId}/seccion/{seccionCodigo}")
-    @PreAuthorize("hasRole('tutor') or hasRole('admin')")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ProgresoUsuarioDTO.ProgresoSeccionDTO> limpiarEstadoProfesor(
             @PathVariable Integer estudianteId,
             @PathVariable String seccionCodigo) {
