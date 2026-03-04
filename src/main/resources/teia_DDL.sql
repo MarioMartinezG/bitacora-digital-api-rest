@@ -22,7 +22,6 @@ CREATE TABLE teia.usuarios (
     nombre VARCHAR(100) NOT NULL,
     correo VARCHAR(150) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
-    rol_id INT REFERENCES teia.roles(id),
     fecha_creacion TIMESTAMP DEFAULT NOW()
 );
 
