@@ -47,7 +47,7 @@ SELECT 2, id FROM teia.roles WHERE nombre = 'estudiante';
 -- Submenús de Bitácora Digital
 INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
 VALUES
-  (2, 2, 'Caracteriza tu Asignatura', 'pi pi-fw pi-id-card', '/home/bitacora/caracteriza-asignatura', 1),
+  (2, 2, 'Identificación de tu curso', 'pi pi-fw pi-id-card', '/home/bitacora/caracteriza-asignatura', 1),
   (3, 2, 'Factores Situacionales', 'pi pi-fw pi-arrow-up-right-and-arrow-down-left-from-center', '/home/bitacora/factores-situacionales', 2),
   (4, 2, 'Ambientes Sanos y seguros para el aprendizaje', 'pi pi-fw pi-wrench', '/home/bitacora/ajustes-razonables', 3),
   (5, 2, 'RAP y RAC', 'pi pi-fw pi-table', '/home/bitacora/rap-rac', 4),

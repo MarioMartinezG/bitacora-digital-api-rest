@@ -27,10 +27,7 @@ public class SeccionValidator {
             "ajustes"
         ));
 
-        // Caracteriza
-        CAMPOS_REQUERIDOS.put(SeccionCodigos.CARACTERIZA, Arrays.asList(
-            "respuesta1", "respuesta2", "respuesta3"
-        ));
+        // Caracteriza: sin campos requeridos a nivel raíz
     }
 
     /**
@@ -135,20 +132,17 @@ public class SeccionValidator {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void validarJustificacion(Map<String, Object> datos) {
-        // Validar límite de 900 caracteres total
-        int totalCaracteres = 0;
-        for (int i = 1; i <= 3; i++) {
-            Object respuesta = datos.get("respuesta" + i);
-            if (respuesta != null) {
-                totalCaracteres += respuesta.toString().length();
+        Object justificacionObj = datos.get("justificacion");
+        if (justificacionObj instanceof Map) {
+            Map<String, Object> justificacion = (Map<String, Object>) justificacionObj;
+            Object respuesta = justificacion.get("respuesta");
+            if (respuesta != null && respuesta.toString().trim().isEmpty()) {
+                throw new RespuestaValidationException(
+                    "El campo 'respuesta' de justificación no puede estar vacío"
+                );
             }
-        }
-
-        if (totalCaracteres > 900) {
-            throw new RespuestaValidationException(
-                "El total de caracteres en justificación excede el límite de 900. Actual: " + totalCaracteres
-            );
         }
     }
 
