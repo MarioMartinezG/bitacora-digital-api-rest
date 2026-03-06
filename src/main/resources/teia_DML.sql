@@ -49,12 +49,10 @@ INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
 VALUES
   (2, 2, 'Identificación de tu curso', 'pi pi-fw pi-id-card', '/home/bitacora/caracteriza-asignatura', 1),
   (3, 2, 'Factores Situacionales', 'pi pi-fw pi-arrow-up-right-and-arrow-down-left-from-center', '/home/bitacora/factores-situacionales', 2),
-  (4, 2, 'Ambientes Sanos y seguros para el aprendizaje', 'pi pi-fw pi-wrench', '/home/bitacora/ajustes-razonables', 3),
-  (5, 2, 'RAP y RAC', 'pi pi-fw pi-table', '/home/bitacora/rap-rac', 4),
-  (6, 2, 'Actividades de Aprendizaje', 'pi pi-fw pi-list', '/home/bitacora/actividades-aprendizaje', 5),
-  (7, 2, 'Cómo Evaluaré', 'pi pi-fw pi-trophy', '/home/bitacora/como-evaluare', 6),
-  (8, 2, 'Secuencia del Curso', 'pi pi-fw pi-angle-double-right', '/home/bitacora/secuencia-curso', 7),
-  (9, 2, 'Bibliografía y medios educativos', 'pi pi-fw pi-book', '/home/bitacora/bibliografia', 8);
+  (4, 2, 'Actividades de Aprendizaje', 'pi pi-fw pi-list', '/home/bitacora/actividades-aprendizaje', 3),
+  (5, 2, 'Diseño de la evaluación', 'pi pi-fw pi-trophy', '/home/bitacora/como-evaluare', 4),
+  (6, 2, 'Secuencia del Curso', 'pi pi-fw pi-angle-double-right', '/home/bitacora/secuencia-curso', 5),
+  (7, 2, 'Bibliografía y medios educativos', 'pi pi-fw pi-book', '/home/bitacora/bibliografia', 6);
 
 -- Roles estudiante para todos los submenús de Bitácora Digital
 INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
