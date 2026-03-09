@@ -51,8 +51,9 @@ VALUES
   (3, 2, 'Factores Situacionales', 'pi pi-fw pi-arrow-up-right-and-arrow-down-left-from-center', '/home/bitacora/factores-situacionales', 2),
   (4, 2, 'Actividades de Aprendizaje', 'pi pi-fw pi-list', '/home/bitacora/actividades-aprendizaje', 3),
   (5, 2, 'Diseño de la evaluación', 'pi pi-fw pi-trophy', '/home/bitacora/como-evaluare', 4),
-  (6, 2, 'Secuencia del Curso', 'pi pi-fw pi-angle-double-right', '/home/bitacora/secuencia-curso', 5),
-  (7, 2, 'Bibliografía y medios educativos', 'pi pi-fw pi-book', '/home/bitacora/bibliografia', 6);
+  (8, 2, 'Calificación', 'pi pi-fw pi-star', '/home/bitacora/calificacion', 5),
+  (6, 2, 'Secuencia del Curso', 'pi pi-fw pi-angle-double-right', '/home/bitacora/secuencia-curso', 6),
+  (7, 2, 'Bibliografía y medios educativos', 'pi pi-fw pi-book', '/home/bitacora/bibliografia', 7);
 
 -- Roles estudiante para todos los submenús de Bitácora Digital
 INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
