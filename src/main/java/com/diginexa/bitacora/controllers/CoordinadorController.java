@@ -7,9 +7,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -55,10 +57,31 @@ public class CoordinadorController {
         return ResponseEntity.ok(coordinadorService.actualizarUsuario(id, request));
     }
 
+    @PostMapping(value = "/usuarios/importar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ImportarUsuariosResponse> importarUsuariosCsv(
+            @RequestParam("archivo") MultipartFile archivo) {
+        log.info("POST /api/coordinador/usuarios/importar - archivo: {}", archivo.getOriginalFilename());
+        return ResponseEntity.ok(coordinadorService.importarUsuariosCsv(archivo));
+    }
+
     @PatchMapping("/usuarios/{id}/toggle-activo")
     public ResponseEntity<Void> toggleUsuarioActivo(@PathVariable Integer id) {
         log.info("PATCH /api/coordinador/usuarios/{}/toggle-activo", id);
         coordinadorService.toggleUsuarioActivo(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/usuarios/{id}/marcar-graduado")
+    public ResponseEntity<Void> marcarUsuarioGraduado(@PathVariable Integer id) {
+        log.info("PATCH /api/coordinador/usuarios/{}/marcar-graduado", id);
+        coordinadorService.marcarUsuarioGraduado(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/usuarios/{id}/reactivar")
+    public ResponseEntity<Void> reactivarUsuario(@PathVariable Integer id) {
+        log.info("PATCH /api/coordinador/usuarios/{}/reactivar", id);
+        coordinadorService.reactivarUsuario(id);
         return ResponseEntity.noContent().build();
     }
 

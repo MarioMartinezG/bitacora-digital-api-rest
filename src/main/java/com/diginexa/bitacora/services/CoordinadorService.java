@@ -13,7 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,10 +28,13 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class CoordinadorService {
 
+    private static final String CLAVE_POR_DEFECTO = "Unbosque";
+
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final AsignaturaRepository asignaturaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     // =============================================
     // GESTIÓN DE USUARIOS
@@ -50,18 +58,26 @@ public class CoordinadorService {
             throw new IllegalArgumentException("El correo ya está registrado");
         }
 
+        String claveAsignada = (request.getContrasena() != null && !request.getContrasena().isBlank())
+                ? request.getContrasena()
+                : CLAVE_POR_DEFECTO;
+
         Set<Rol> roles = resolverRoles(request.getRoles());
 
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
                 .correo(request.getCorreo().toLowerCase().trim())
-                .contrasena(passwordEncoder.encode(request.getContrasena()))
+                .contrasena(passwordEncoder.encode(claveAsignada))
                 .roles(roles)
                 .activo(true)
+                .requiereCambioClave(true)
                 .build();
 
         Usuario saved = usuarioRepository.save(usuario);
         log.info("Usuario creado por coordinador: id={}, correo={}", saved.getId(), saved.getCorreo());
+
+        emailService.enviarBienvenida(saved.getCorreo(), saved.getNombre(), claveAsignada);
+
         return toUsuarioDTO(saved);
     }
 
@@ -95,12 +111,117 @@ public class CoordinadorService {
     }
 
     @Transactional
+    public ImportarUsuariosResponse importarUsuariosCsv(MultipartFile archivo) {
+        if (archivo.isEmpty()) {
+            throw new IllegalArgumentException("El archivo CSV está vacío");
+        }
+
+        List<ImportarUsuariosResponse.ErrorFilaDTO> listaErrores = new ArrayList<>();
+        int creados = 0;
+        int totalFilas = 0;
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(archivo.getInputStream(), StandardCharsets.UTF_8))) {
+            String linea;
+            boolean esCabecera = true;
+
+            while ((linea = reader.readLine()) != null) {
+                if (esCabecera) {
+                    esCabecera = false;
+                    continue;
+                }
+                if (linea.isBlank()) continue;
+
+                totalFilas++;
+                int filaActual = totalFilas + 1; // +1 por cabecera
+
+                String[] campos = linea.split(",", -1);
+                if (campos.length < 3) {
+                    listaErrores.add(ImportarUsuariosResponse.ErrorFilaDTO.builder()
+                            .fila(filaActual).correo("")
+                            .error("Formato inválido: se esperan 3 columnas (nombre,correo,roles)")
+                            .build());
+                    continue;
+                }
+
+                String nombre = campos[0].trim();
+                String correo = campos[1].trim().toLowerCase();
+                String rolesCsv = campos[2].trim();
+
+                if (nombre.isBlank() || correo.isBlank() || rolesCsv.isBlank()) {
+                    listaErrores.add(ImportarUsuariosResponse.ErrorFilaDTO.builder()
+                            .fila(filaActual).correo(correo).error("Campos obligatorios vacíos").build());
+                    continue;
+                }
+
+                List<Integer> roles;
+                try {
+                    roles = Arrays.stream(rolesCsv.split(";"))
+                            .map(String::trim)
+                            .map(Integer::parseInt)
+                            .collect(Collectors.toList());
+                } catch (NumberFormatException e) {
+                    listaErrores.add(ImportarUsuariosResponse.ErrorFilaDTO.builder()
+                            .fila(filaActual).correo(correo)
+                            .error("Roles inválidos: deben ser números separados por ';'").build());
+                    continue;
+                }
+
+                try {
+                    CreateUsuarioRequest req = new CreateUsuarioRequest();
+                    req.setNombre(nombre);
+                    req.setCorreo(correo);
+                    req.setRoles(roles);
+                    crearUsuario(req);
+                    creados++;
+                } catch (IllegalArgumentException e) {
+                    listaErrores.add(ImportarUsuariosResponse.ErrorFilaDTO.builder()
+                            .fila(filaActual).correo(correo).error(e.getMessage()).build());
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error al leer el archivo CSV", e);
+        }
+
+        log.info("Importación CSV completada: {} procesados, {} creados, {} errores", totalFilas, creados, listaErrores.size());
+        return ImportarUsuariosResponse.builder()
+                .totalProcesados(totalFilas)
+                .creados(creados)
+                .errores(listaErrores.size())
+                .detalleErrores(listaErrores)
+                .build();
+    }
+
+    @Transactional
     public void toggleUsuarioActivo(Integer id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + id));
+        if (Boolean.TRUE.equals(usuario.getGraduado())) {
+            throw new IllegalStateException("No se puede cambiar el estado de un usuario graduado");
+        }
         usuario.setActivo(!usuario.getActivo());
         usuarioRepository.save(usuario);
         log.info("Usuario {} - activo: {}", id, usuario.getActivo());
+    }
+
+    @Transactional
+    public void marcarUsuarioGraduado(Integer id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + id));
+        usuario.setGraduado(true);
+        usuario.setActivo(false);
+        usuarioRepository.save(usuario);
+        log.info("Usuario {} marcado como graduado", id);
+    }
+
+    @Transactional
+    public void reactivarUsuario(Integer id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + id));
+        usuario.setGraduado(false);
+        usuario.setActivo(true);
+        usuarioRepository.save(usuario);
+        log.info("Usuario {} reactivado (graduado revertido)", id);
     }
 
     // =============================================
@@ -215,6 +336,8 @@ public class CoordinadorService {
                 .roles(roleIds)
                 .rolesNombres(roleNames)
                 .activo(usuario.getActivo())
+                .graduado(usuario.getGraduado())
+                .requiereCambioClave(usuario.getRequiereCambioClave())
                 .ultimoAcceso(usuario.getUltimoAcceso())
                 .fechaCreacion(usuario.getFechaCreacion())
                 .build();

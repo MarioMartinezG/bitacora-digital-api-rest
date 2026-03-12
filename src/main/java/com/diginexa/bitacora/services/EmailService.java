@@ -27,6 +27,54 @@ public class EmailService {
     private String appName;
 
     /**
+     * Envía correo de bienvenida con las credenciales iniciales del usuario.
+     */
+    public void enviarBienvenida(String destinatario, String nombre, String claveInicial) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(destinatario);
+            helper.setSubject(String.format("[%s] Bienvenido - Credenciales de acceso", appName));
+
+            String html = String.format("""
+                <!DOCTYPE html>
+                <html>
+                <head><meta charset="UTF-8"></head>
+                <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                    <div style="max-width: 600px; margin: 0 auto;">
+                        <div style="background-color: #1976D2; color: white; padding: 24px; border-radius: 8px 8px 0 0;">
+                            <h2 style="margin: 0;">Bienvenido a %s</h2>
+                        </div>
+                        <div style="background-color: #f9f9f9; padding: 24px; border: 1px solid #ddd; border-top: none;">
+                            <p>Hola <strong>%s</strong>,</p>
+                            <p>Tu cuenta ha sido creada exitosamente. A continuación encontrarás tus credenciales de acceso:</p>
+                            <div style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 16px; margin: 16px 0;">
+                                <p style="margin: 4px 0;"><strong>Usuario:</strong> %s</p>
+                                <p style="margin: 4px 0;"><strong>Contraseña temporal:</strong> <code style="background:#f0f0f0; padding: 2px 6px; border-radius: 3px;">%s</code></p>
+                            </div>
+                            <p style="color: #e53935; font-weight: bold;">⚠️ Por seguridad, deberás cambiar tu contraseña en el primer inicio de sesión.</p>
+                            <p>La nueva contraseña debe contener al menos: 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.</p>
+                        </div>
+                        <div style="background-color: #f1f1f1; padding: 12px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 8px 8px;">
+                            <p>Este es un mensaje automático de %s. Por favor, no responda a este correo.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """, appName, nombre, destinatario, claveInicial, appName);
+
+            helper.setText(html, true);
+            mailSender.send(mimeMessage);
+            log.info("Correo de bienvenida enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error enviando correo de bienvenida a {}: {}", destinatario, e.getMessage());
+            // No propagamos la excepción para no bloquear la creación del usuario
+        }
+    }
+
+    /**
      * Envía una notificación por correo electrónico.
      */
     public void enviarNotificacion(

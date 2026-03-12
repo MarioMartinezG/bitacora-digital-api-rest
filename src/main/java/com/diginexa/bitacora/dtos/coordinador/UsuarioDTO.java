@@ -19,6 +19,8 @@ public class UsuarioDTO {
     private List<Integer> roles;
     private List<String> rolesNombres;
     private Boolean activo;
+    private Boolean graduado;
+    private Boolean requiereCambioClave;
     private LocalDateTime ultimoAcceso;
     private LocalDateTime fechaCreacion;
 }

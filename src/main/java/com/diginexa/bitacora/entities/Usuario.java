@@ -50,6 +50,14 @@ public class Usuario implements UserDetails {
     @Builder.Default
     private Boolean activo = true;
 
+    @Column(name = "requiere_cambio_clave", nullable = false)
+    @Builder.Default
+    private Boolean requiereCambioClave = false;
+
+    @Column(name = "graduado", nullable = false)
+    @Builder.Default
+    private Boolean graduado = false;
+
     @Column(name = "ultimo_acceso")
     private LocalDateTime ultimoAcceso;
 
@@ -60,6 +68,8 @@ public class Usuario implements UserDetails {
     protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
         if (activo == null) activo = true;
+        if (requiereCambioClave == null) requiereCambioClave = false;
+        if (graduado == null) graduado = false;
     }
 
     public String getUsername() {
@@ -98,6 +108,7 @@ public class Usuario implements UserDetails {
 
     @Override
     public boolean isEnabled() {
+        if (Boolean.TRUE.equals(graduado)) return false;
         return activo != null ? activo : true;
     }
 }
