@@ -486,3 +486,12 @@ CREATE TABLE IF NOT EXISTS teia.asignatura_tutores (
 CREATE INDEX IF NOT EXISTS idx_usuario_roles_usuario ON teia.usuario_roles(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_usuario_roles_rol ON teia.usuario_roles(rol_id);
 CREATE INDEX IF NOT EXISTS idx_asignaturas_codigo ON teia.asignaturas(codigo);
+-- =============================================
+-- Migración v5.0 - Primer login y cambio de clave
+-- =============================================
+ALTER TABLE teia.usuarios
+    ADD COLUMN IF NOT EXISTS requiere_cambio_clave BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Migración v5.1 - Estado graduado
+ALTER TABLE teia.usuarios
+    ADD COLUMN IF NOT EXISTS graduado BOOLEAN NOT NULL DEFAULT FALSE;

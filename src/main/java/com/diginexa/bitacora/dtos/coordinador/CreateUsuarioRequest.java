@@ -17,7 +17,7 @@ public class CreateUsuarioRequest {
     @Email(message = "El formato del correo no es válido")
     private String correo;
 
-    @NotBlank(message = "La contraseña es obligatoria")
+    // Opcional: si no se provee, se asigna la clave por defecto del sistema
     private String contrasena;
 
     @NotEmpty(message = "Debe asignar al menos un rol")
