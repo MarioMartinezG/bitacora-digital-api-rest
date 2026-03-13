@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -90,6 +92,54 @@ public class TutorEstudianteService {
     @Transactional(readOnly = true)
     public boolean tieneTutorAsignado(Integer estudianteId) {
         return repository.existsByEstudianteIdAndActivoTrue(estudianteId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TutorEstudianteDTO> obtenerTodasAsignaciones() {
+        return repository.findAllByActivoTrue()
+                .stream()
+                .map(this::convertToDTOWithRelations)
+                .collect(Collectors.toList());
+    }
+
+    public List<TutorEstudianteDTO> asignarAleatorio() {
+        List<Usuario> tutores = usuarioRepository.findByRolNombre("tutor");
+        List<Usuario> estudiantes = usuarioRepository.findByRolNombre("estudiante").stream()
+                .filter(e -> !Boolean.TRUE.equals(e.getGraduado()))
+                .collect(Collectors.toList());
+
+        if (tutores.isEmpty()) {
+            throw new IllegalStateException("No hay tutores activos para realizar la asignación");
+        }
+        if (estudiantes.isEmpty()) {
+            throw new IllegalStateException("No hay estudiantes activos para asignar");
+        }
+
+        // Desactivar todas las asignaciones existentes
+        repository.findAllByActivoTrue().forEach(a -> {
+            a.setActivo(false);
+            repository.save(a);
+        });
+
+        // Distribuir estudiantes de forma equitativa (round-robin)
+        Collections.shuffle(estudiantes);
+        List<TutorEstudianteDTO> resultado = new ArrayList<>();
+        for (int i = 0; i < estudiantes.size(); i++) {
+            Usuario tutor = tutores.get(i % tutores.size());
+            Usuario estudiante = estudiantes.get(i);
+
+            TutorEstudiante nueva = TutorEstudiante.builder()
+                    .tutorId(tutor.getId())
+                    .estudianteId(estudiante.getId())
+                    .activo(true)
+                    .build();
+            TutorEstudiante guardada = repository.save(nueva);
+            resultado.add(convertToDTO(guardada, tutor, estudiante));
+        }
+
+        log.info("Asignación aleatoria completada: {} estudiantes distribuidos entre {} tutores",
+                estudiantes.size(), tutores.size());
+        return resultado;
     }
 
     public void desactivarAsignacion(Long asignacionId) {

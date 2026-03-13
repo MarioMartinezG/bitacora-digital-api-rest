@@ -142,14 +142,15 @@ ON CONFLICT (menu_id, rol_id) DO NOTHING;
 INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
 VALUES
     (31, 6, 'Usuarios', 'pi pi-fw pi-users', '/home/coordinador/usuarios', 1),
-    (32, 6, 'Asignaturas', 'pi pi-fw pi-book', '/home/coordinador/asignaturas', 2)
+    (32, 6, 'Asignaturas', 'pi pi-fw pi-book', '/home/coordinador/asignaturas', 2),
+    (35, 6, 'Asignación de tutores', 'pi pi-fw pi-sitemap', '/home/coordinador/asignaciones', 3)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
 SELECT mi.id, r.id
 FROM teia.menu_items mi
 JOIN teia.roles r ON r.nombre = 'admin'
-WHERE mi.id IN (31, 32)
+WHERE mi.id IN (31, 32, 35)
 ON CONFLICT (menu_item_id, rol_id) DO NOTHING;
 
 -- Menu: Seguimiento

@@ -31,4 +31,6 @@ public interface TutorEstudianteRepository extends JpaRepository<TutorEstudiante
     Optional<TutorEstudiante> findByTutorIdAndEstudianteId(
             @Param("tutorId") Integer tutorId,
             @Param("estudianteId") Integer estudianteId);
+
+    List<TutorEstudiante> findAllByActivoTrue();
 }

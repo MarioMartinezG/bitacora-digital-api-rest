@@ -67,6 +67,27 @@ public class TutorEstudianteController {
     }
 
     /**
+     * Obtener todas las asignaciones activas
+     * GET /api/tutor-estudiante/asignaciones
+     */
+    @GetMapping("/asignaciones")
+    public ResponseEntity<List<TutorEstudianteDTO>> obtenerTodasAsignaciones() {
+        log.info("GET /api/tutor-estudiante/asignaciones");
+        return ResponseEntity.ok(tutorEstudianteService.obtenerTodasAsignaciones());
+    }
+
+    /**
+     * Asignación aleatoria equitativa de estudiantes a tutores
+     * POST /api/tutor-estudiante/asignar-aleatorio
+     */
+    @PostMapping("/asignar-aleatorio")
+    public ResponseEntity<List<TutorEstudianteDTO>> asignarAleatorio() {
+        log.info("POST /api/tutor-estudiante/asignar-aleatorio");
+        List<TutorEstudianteDTO> resultado = tutorEstudianteService.asignarAleatorio();
+        return ResponseEntity.ok(resultado);
+    }
+
+    /**
      * Desactivar una asignación tutor-estudiante
      * DELETE /api/tutor-estudiante/{id}
      */
