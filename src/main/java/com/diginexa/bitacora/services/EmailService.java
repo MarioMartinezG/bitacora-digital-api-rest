@@ -38,6 +38,10 @@ public class EmailService {
             helper.setTo(destinatario);
             helper.setSubject(String.format("[%s] Bienvenido - Credenciales de acceso", appName));
 
+            String usernameDisplay = destinatario.contains("@")
+                    ? destinatario.substring(0, destinatario.indexOf("@"))
+                    : destinatario;
+
             String html = String.format("""
                 <!DOCTYPE html>
                 <html>
@@ -63,7 +67,7 @@ public class EmailService {
                     </div>
                 </body>
                 </html>
-                """, appName, nombre, destinatario, claveInicial, appName);
+                """, appName, nombre, usernameDisplay, claveInicial, appName);
 
             helper.setText(html, true);
             mailSender.send(mimeMessage);
