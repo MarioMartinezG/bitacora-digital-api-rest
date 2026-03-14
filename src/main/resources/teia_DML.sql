@@ -52,8 +52,8 @@ VALUES
   (3, 2, 'Factores Situacionales', 'pi pi-fw pi-arrow-up-right-and-arrow-down-left-from-center', '/home/bitacora/factores-situacionales', 3),
   (4, 2, 'Actividades de Aprendizaje', 'pi pi-fw pi-list', '/home/bitacora/actividades-aprendizaje', 4),
   (5, 2, 'Diseño de la evaluación', 'pi pi-fw pi-trophy', '/home/bitacora/como-evaluare', 5),
-  (8, 2, 'Calificación', 'pi pi-fw pi-star', '/home/bitacora/calificacion', 6),
-  (6, 2, 'Secuencia del Curso', 'pi pi-fw pi-angle-double-right', '/home/bitacora/secuencia-curso', 7),
+  (6, 2, 'Secuencia y cronograma', 'pi pi-fw pi-angle-double-right', '/home/bitacora/secuencia-curso', 6),
+  (8, 2, 'Calificación', 'pi pi-fw pi-star', '/home/bitacora/calificacion', 7),
   (7, 2, 'Bibliografía y medios educativos', 'pi pi-fw pi-book', '/home/bitacora/bibliografia', 8);
 
 -- Roles estudiante para todos los submenús de Bitácora Digital
