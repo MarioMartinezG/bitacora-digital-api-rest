@@ -54,7 +54,7 @@ VALUES
   (5, 2, 'Diseño de la evaluación', 'pi pi-fw pi-trophy', '/home/bitacora/como-evaluare', 5),
   (6, 2, 'Secuencia y cronograma', 'pi pi-fw pi-angle-double-right', '/home/bitacora/secuencia-curso', 6),
   (8, 2, 'Calificación', 'pi pi-fw pi-star', '/home/bitacora/calificacion', 7),
-  (7, 2, 'Bibliografía y medios educativos', 'pi pi-fw pi-book', '/home/bitacora/bibliografia', 8);
+  (7, 2, 'Medios educativos', 'pi pi-fw pi-book', '/home/bitacora/bibliografia', 8);
 
 -- Roles estudiante para todos los submenús de Bitácora Digital
 INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
