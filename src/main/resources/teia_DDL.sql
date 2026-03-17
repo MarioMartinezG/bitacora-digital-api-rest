@@ -495,3 +495,202 @@ ALTER TABLE teia.usuarios
 -- Migración v5.1 - Estado graduado
 ALTER TABLE teia.usuarios
     ADD COLUMN IF NOT EXISTS graduado BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- =============================================
+-- Migración v6.0 - Alertas coordinador y programas académicos
+-- =============================================
+
+-- Claves de configuración para alertas del coordinador
+INSERT INTO teia.configuracion_notificaciones (clave, valor, descripcion, tipo_dato) VALUES
+    ('UMBRALES_COMPLETITUD_COORDINADOR', '25,50,75', 'Porcentajes de avance que generan alerta al coordinador', 'STRING'),
+    ('DIAS_DEMORA_COORDINADOR',          '7,15',     'Días antes del vencimiento de un momento para alertar por demora', 'STRING'),
+    ('DIAS_ANTICIPACION_RIESGO_COORDINADOR', '15',   'Días antes del cierre del curso para evaluar riesgo de no completar', 'INTEGER'),
+    ('PORCENTAJE_MINIMO_RIESGO_COORDINADOR', '50',   'Porcentaje mínimo esperado de avance para no considerar al estudiante en riesgo', 'INTEGER')
+ON CONFLICT (clave) DO NOTHING;
+
+-- =============================================
+-- Programas académicos
+-- =============================================
+CREATE TABLE IF NOT EXISTS teia.programas (
+    id            SERIAL PRIMARY KEY,
+    nombre        VARCHAR(200) NOT NULL,
+    activo        BOOLEAN NOT NULL DEFAULT true,
+    fecha_creacion      TIMESTAMP DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMP DEFAULT NOW()
+);
+
+-- Datos precargados
+INSERT INTO teia.programas (nombre) VALUES
+    ('Medicina'),
+    ('Odontología'),
+    ('Psicología'),
+    ('Enfermería'),
+    ('Ingeniería de Sistemas'),
+    ('Ingeniería Industrial'),
+    ('Diseño Industrial'),
+    ('Administración de Empresas'),
+    ('Economía'),
+    ('Arte Dramático'),
+    ('Música')
+ON CONFLICT DO NOTHING;
+
+-- =============================================
+-- Migración v6.1 - Medios de evaluación
+-- =============================================
+CREATE TABLE IF NOT EXISTS teia.medios (
+    id                  SERIAL PRIMARY KEY,
+    label               VARCHAR(300) NOT NULL,
+    value               VARCHAR(100) NOT NULL UNIQUE,
+    categoria           VARCHAR(20)  NOT NULL CHECK (categoria IN ('ESCRITOS', 'ORALES', 'PRACTICOS')),
+    activo              BOOLEAN NOT NULL DEFAULT true,
+    fecha_creacion      TIMESTAMP DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_medios_categoria ON teia.medios(categoria);
+CREATE INDEX IF NOT EXISTS idx_medios_activo    ON teia.medios(activo);
+
+-- Datos precargados: Escritos
+INSERT INTO teia.medios (label, value, categoria) VALUES
+    ('Carpeta o dossier / carpeta colaborativa',         'carpeta_dossier',    'ESCRITOS'),
+    ('Control (Examen)',                                  'control_examen',     'ESCRITOS'),
+    ('Cuaderno / cuaderno de notas / cuaderno de campo', 'cuaderno',           'ESCRITOS'),
+    ('Cuestionario',                                      'cuestionario',       'ESCRITOS'),
+    ('Diario reflexivo / diario de clase',                'diario',             'ESCRITOS'),
+    ('Estudio de casos',                                  'estudio_casos',      'ESCRITOS'),
+    ('Ensayo',                                            'ensayo',             'ESCRITOS'),
+    ('Examen',                                            'examen',             'ESCRITOS'),
+    ('Foro virtual',                                      'foro_virtual',       'ESCRITOS'),
+    ('Memoria',                                           'memoria',            'ESCRITOS'),
+    ('Monografía',                                        'monografia',         'ESCRITOS'),
+    ('Informe',                                           'informe',            'ESCRITOS'),
+    ('Portafolio / portafolio electrónico',               'portafolio',         'ESCRITOS'),
+    ('Póster',                                            'poster',             'ESCRITOS'),
+    ('Proyecto',                                          'proyecto',           'ESCRITOS'),
+    ('Pruebas objetivas',                                 'pruebas_objetivas',  'ESCRITOS'),
+    ('Recensión',                                         'recension',          'ESCRITOS'),
+    ('Test diagnóstico',                                  'test_diagnostico',   'ESCRITOS'),
+    ('Trabajo escrito',                                   'trabajo_escrito',    'ESCRITOS'),
+-- Datos precargados: Orales
+    ('Comunicación',                                      'comunicacion_oral',  'ORALES'),
+    ('Cuestionario oral',                                 'cuestionario_oral',  'ORALES'),
+    ('Debate / diálogo grupal',                           'debate',             'ORALES'),
+    ('Exposición',                                        'exposicion',         'ORALES'),
+    ('Discusión grupal',                                  'discusion_grupal',   'ORALES'),
+    ('Mesa redonda',                                      'mesa_redonda',       'ORALES'),
+    ('Ponencia',                                          'ponencia',           'ORALES'),
+    ('Pregunta de clase',                                 'pregunta_clase',     'ORALES'),
+    ('Presentación oral',                                 'presentacion_oral',  'ORALES'),
+-- Datos precargados: Prácticos
+    ('Práctica supervisada',                              'practica_supervisada','PRACTICOS'),
+    ('Demostración / actuación / representación',         'demostracion',       'PRACTICOS'),
+    ('Role playing',                                      'role_playing',       'PRACTICOS')
+ON CONFLICT (value) DO NOTHING;
+
+
+-- =============================================
+-- Migración v6.2 - Técnicas e Instrumentos de evaluación
+-- =============================================
+
+CREATE TABLE IF NOT EXISTS teia.tecnicas (
+    id BIGSERIAL PRIMARY KEY,
+    label VARCHAR(255) NOT NULL,
+    value VARCHAR(255) NOT NULL UNIQUE,
+    grupo VARCHAR(50) NOT NULL CHECK (grupo IN ('ALUMNO_NO_INTERVIENE','ALUMNO_PARTICIPA')),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tecnicas_grupo   ON teia.tecnicas(grupo);
+CREATE INDEX IF NOT EXISTS idx_tecnicas_activo  ON teia.tecnicas(activo);
+
+-- Técnicas: El alumno no interviene
+INSERT INTO teia.tecnicas (label, value, grupo) VALUES
+    ('Análisis documental',                         'analisis_documental',    'ALUMNO_NO_INTERVIENE'),
+    ('Análisis de producciones',                    'analisis_producciones',  'ALUMNO_NO_INTERVIENE'),
+    ('Observación directa del alumno',              'observacion_directa',    'ALUMNO_NO_INTERVIENE'),
+    ('Observación del grupo',                       'observacion_grupo',      'ALUMNO_NO_INTERVIENE'),
+    ('Observación sistemática',                     'observacion_sistematica','ALUMNO_NO_INTERVIENE'),
+    ('Análisis de grabación de audio o video',      'analisis_audio_video',   'ALUMNO_NO_INTERVIENE')
+ON CONFLICT (value) DO NOTHING;
+
+-- Técnicas: El alumno participa
+INSERT INTO teia.tecnicas (label, value, grupo) VALUES
+    ('Autoevaluación (autorreflexión y/o análisis documental)',                            'autoevaluacion',          'ALUMNO_PARTICIPA'),
+    ('Evaluación entre pares (análisis documental y/o observación)',                        'coevaluacion',            'ALUMNO_PARTICIPA'),
+    ('Evaluación compartida o colaborativa (entrevista individual o grupal)',               'evaluacion_colaborativa',  'ALUMNO_PARTICIPA')
+ON CONFLICT (value) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS teia.instrumentos (
+    id BIGSERIAL PRIMARY KEY,
+    label VARCHAR(255) NOT NULL,
+    value VARCHAR(255) NOT NULL UNIQUE,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_instrumentos_activo ON teia.instrumentos(activo);
+
+-- Instrumentos
+INSERT INTO teia.instrumentos (label, value) VALUES
+    ('Diario del profesor',                          'diario_profesor'),
+    ('Escala de comprobación',                       'escala_comprobacion'),
+    ('Escala de diferencial semántico',              'escala_diferencial'),
+    ('Escala verbal o numérica',                     'escala_verbal_numerica'),
+    ('Escala descriptiva o rúbrica',                 'escala_rubrica'),
+    ('Escala de estimación',                         'escala_estimacion'),
+    ('Ficha de observación',                         'ficha_observacion'),
+    ('Lista de control',                             'lista_control'),
+    ('Matrices de decisión',                         'matrices_decision'),
+    ('Fichas de seguimiento individual o grupal',    'fichas_seguimiento'),
+    ('Fichas de autoevaluación',                     'fichas_autoevaluacion'),
+    ('Fichas de evaluación entre iguales',           'fichas_entre_iguales'),
+    ('Informe de expertos',                          'informe_expertos'),
+    ('Informe de autoevaluación',                    'informe_autoevaluacion')
+ON CONFLICT (value) DO NOTHING;
+
+
+-- ============================================================
+-- v6.3 - Dimensiones y Metodologías de aprendizaje
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS teia.dimensiones (
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL UNIQUE,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+INSERT INTO teia.dimensiones (nombre) VALUES
+  ('Compromiso o valoración'),
+  ('Dimensiones humanas del aprendizaje'),
+  ('Conocimiento Fundamental'),
+  ('Aplicación del aprendizaje'),
+  ('Integración'),
+  ('Aprender a aprender')
+ON CONFLICT (nombre) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS teia.metodologias (
+    id BIGSERIAL PRIMARY KEY,
+    label VARCHAR(255) NOT NULL,
+    value VARCHAR(255) NOT NULL UNIQUE,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+INSERT INTO teia.metodologias (label, value) VALUES
+  ('Aprendizaje basado en proyectos', 'proyectos'),
+  ('Aprendizaje basado en juegos', 'juegos'),
+  ('Aprendizaje invertido', 'invertido'),
+  ('Aprendizaje basado en evidencia', 'evidencia'),
+  ('Diálogo reflexivo', 'dialogo'),
+  ('Aprendizaje cooperativo', 'cooperativo'),
+  ('Aprendizaje basado en problemas', 'problemas'),
+  ('Investigación - Acción', 'investigacion'),
+  ('Aprendizaje a través del servicio', 'servicio'),
+  ('Aprendizaje adaptativo', 'adaptativo')
+ON CONFLICT (value) DO NOTHING;

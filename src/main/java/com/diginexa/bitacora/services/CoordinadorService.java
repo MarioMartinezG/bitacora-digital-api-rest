@@ -1,10 +1,8 @@
 package com.diginexa.bitacora.services;
 
 import com.diginexa.bitacora.dtos.coordinador.*;
-import com.diginexa.bitacora.entities.Asignatura;
 import com.diginexa.bitacora.entities.Rol;
 import com.diginexa.bitacora.entities.Usuario;
-import com.diginexa.bitacora.repositories.AsignaturaRepository;
 import com.diginexa.bitacora.repositories.RolRepository;
 import com.diginexa.bitacora.repositories.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -32,7 +30,6 @@ public class CoordinadorService {
 
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
-    private final AsignaturaRepository asignaturaRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
@@ -225,86 +222,6 @@ public class CoordinadorService {
     }
 
     // =============================================
-    // GESTIÓN DE ASIGNATURAS
-    // =============================================
-
-    public List<AsignaturaDTO> listarAsignaturas() {
-        return asignaturaRepository.findAll().stream()
-                .map(this::toAsignaturaDTO)
-                .toList();
-    }
-
-    public AsignaturaDTO obtenerAsignatura(Integer id) {
-        Asignatura asignatura = asignaturaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Asignatura no encontrada con id: " + id));
-        return toAsignaturaDTO(asignatura);
-    }
-
-    @Transactional
-    public AsignaturaDTO crearAsignatura(CreateAsignaturaRequest request) {
-        if (asignaturaRepository.existsByCodigo(request.getCodigo())) {
-            throw new IllegalArgumentException("El código de asignatura ya existe");
-        }
-
-        Asignatura asignatura = Asignatura.builder()
-                .nombre(request.getNombre())
-                .codigo(request.getCodigo().toUpperCase().trim())
-                .descripcion(request.getDescripcion())
-                .creditos(request.getCreditos())
-                .semestre(request.getSemestre())
-                .activa(true)
-                .build();
-
-        Asignatura saved = asignaturaRepository.save(asignatura);
-        log.info("Asignatura creada: id={}, codigo={}", saved.getId(), saved.getCodigo());
-        return toAsignaturaDTO(saved);
-    }
-
-    @Transactional
-    public AsignaturaDTO actualizarAsignatura(Integer id, UpdateAsignaturaRequest request) {
-        Asignatura asignatura = asignaturaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Asignatura no encontrada con id: " + id));
-
-        if (request.getNombre() != null) asignatura.setNombre(request.getNombre());
-        if (request.getCodigo() != null) {
-            if (!asignatura.getCodigo().equals(request.getCodigo()) && asignaturaRepository.existsByCodigo(request.getCodigo())) {
-                throw new IllegalArgumentException("El código de asignatura ya existe");
-            }
-            asignatura.setCodigo(request.getCodigo().toUpperCase().trim());
-        }
-        if (request.getDescripcion() != null) asignatura.setDescripcion(request.getDescripcion());
-        if (request.getCreditos() != null) asignatura.setCreditos(request.getCreditos());
-        if (request.getSemestre() != null) asignatura.setSemestre(request.getSemestre());
-        if (request.getActiva() != null) asignatura.setActiva(request.getActiva());
-
-        Asignatura saved = asignaturaRepository.save(asignatura);
-        log.info("Asignatura actualizada: id={}", saved.getId());
-        return toAsignaturaDTO(saved);
-    }
-
-    @Transactional
-    public void asignarEstudiantes(Integer asignaturaId, List<Integer> estudianteIds) {
-        Asignatura asignatura = asignaturaRepository.findById(asignaturaId)
-                .orElseThrow(() -> new EntityNotFoundException("Asignatura no encontrada"));
-
-        List<Usuario> estudiantes = usuarioRepository.findAllById(estudianteIds);
-        asignatura.getEstudiantes().addAll(new HashSet<>(estudiantes));
-        asignaturaRepository.save(asignatura);
-        log.info("Estudiantes asignados a asignatura {}: {}", asignaturaId, estudianteIds);
-    }
-
-    @Transactional
-    public void asignarTutores(Integer asignaturaId, List<Integer> tutorIds) {
-        Asignatura asignatura = asignaturaRepository.findById(asignaturaId)
-                .orElseThrow(() -> new EntityNotFoundException("Asignatura no encontrada"));
-
-        List<Usuario> tutores = usuarioRepository.findAllById(tutorIds);
-        asignatura.getTutores().addAll(new HashSet<>(tutores));
-        asignaturaRepository.save(asignatura);
-        log.info("Tutores asignados a asignatura {}: {}", asignaturaId, tutorIds);
-    }
-
-    // =============================================
     // HELPERS
     // =============================================
 
@@ -343,18 +260,4 @@ public class CoordinadorService {
                 .build();
     }
 
-    private AsignaturaDTO toAsignaturaDTO(Asignatura asignatura) {
-        return AsignaturaDTO.builder()
-                .id(asignatura.getId())
-                .nombre(asignatura.getNombre())
-                .codigo(asignatura.getCodigo())
-                .descripcion(asignatura.getDescripcion())
-                .creditos(asignatura.getCreditos())
-                .semestre(asignatura.getSemestre())
-                .activa(asignatura.getActiva())
-                .totalEstudiantes(asignatura.getEstudiantes() != null ? asignatura.getEstudiantes().size() : 0)
-                .totalTutores(asignatura.getTutores() != null ? asignatura.getTutores().size() : 0)
-                .fechaCreacion(asignatura.getFechaCreacion())
-                .build();
-    }
 }

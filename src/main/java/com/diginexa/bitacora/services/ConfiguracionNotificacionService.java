@@ -90,6 +90,24 @@ public class ConfiguracionNotificacionService {
         return Boolean.parseBoolean(valor);
     }
 
+    @Transactional(readOnly = true)
+    public List<Integer> getDiasDemoraCoordinador() {
+        String valor = obtenerValor(ClaveConfiguracion.DIAS_DEMORA_COORDINADOR, "7,3,1");
+        return Arrays.stream(valor.split(","))
+                .map(String::trim)
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Integer> getUmbralesCompletitudCoordinador() {
+        String valor = obtenerValor(ClaveConfiguracion.UMBRALES_COMPLETITUD_COORDINADOR, "25,50,75");
+        return Arrays.stream(valor.split(","))
+                .map(String::trim)
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+    }
+
     private ConfiguracionNotificacionDTO convertToDTO(ConfiguracionNotificacion entity) {
         return ConfiguracionNotificacionDTO.builder()
                 .id(entity.getId())

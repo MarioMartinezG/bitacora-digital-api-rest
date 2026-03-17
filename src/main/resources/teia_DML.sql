@@ -78,7 +78,9 @@ INSERT INTO teia.configuracion_notificaciones (clave, valor, descripcion, tipo_d
     ('UMBRAL_PROGRESO_NOTIFICACION', '80', 'Porcentaje de progreso para notificar al tutor', 'INTEGER'),
     ('EMAIL_HABILITADO', 'true', 'Habilitar envío de correos electrónicos', 'BOOLEAN'),
     ('WEBSOCKET_HABILITADO', 'true', 'Habilitar notificaciones en tiempo real via WebSocket', 'BOOLEAN'),
-    ('HORA_EJECUCION_SCHEDULER', '08:00', 'Hora de ejecución del scheduler de vencimientos (HH:mm)', 'STRING')
+    ('HORA_EJECUCION_SCHEDULER', '08:00', 'Hora de ejecución del scheduler de vencimientos (HH:mm)', 'STRING'),
+    ('UMBRALES_COMPLETITUD_COORDINADOR', '25,50,75', 'Porcentajes de completitud de bitácora que generan alerta (configurado por coordinador)', 'STRING'),
+    ('DIAS_DEMORA_COORDINADOR', '7,3,1', 'Días antes del vencimiento para marcar estudiante en demora (configurado por coordinador)', 'STRING')
 ON CONFLICT (clave) DO NOTHING;
 
 -- =============================================
@@ -142,7 +144,7 @@ ON CONFLICT (menu_id, rol_id) DO NOTHING;
 INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
 VALUES
     (31, 6, 'Usuarios', 'pi pi-fw pi-users', '/home/coordinador/usuarios', 1),
-    (32, 6, 'Asignaturas', 'pi pi-fw pi-book', '/home/coordinador/asignaturas', 2),
+    (32, 6, 'Parametrizaciones', 'pi pi-fw pi-sliders-h', '/home/coordinador/parametrizaciones', 2),
     (35, 6, 'Asignación de tutores', 'pi pi-fw pi-sitemap', '/home/coordinador/asignaciones', 3)
 ON CONFLICT (id) DO NOTHING;
 

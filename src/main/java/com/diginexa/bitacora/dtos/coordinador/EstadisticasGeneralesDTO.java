@@ -14,7 +14,6 @@ import java.util.List;
 public class EstadisticasGeneralesDTO {
     private long totalEstudiantes;
     private long totalTutores;
-    private long totalAsignaturas;
     private long estudiantesActivos;
     private double promedioProgreso;
     private long alertasPendientes;

@@ -39,4 +39,19 @@ public final class ClaveConfiguracion {
      * Formato: HH:mm (ej: "08:00")
      */
     public static final String HORA_EJECUCION_SCHEDULER = "HORA_EJECUCION_SCHEDULER";
+
+    // ── Configuración exclusiva del Coordinador ──────────────────────────────
+
+    /**
+     * Umbrales de completitud de bitácora configurados por el coordinador.
+     * Genera alertas cuando un estudiante alcanza estos porcentajes.
+     * Formato: lista separada por comas (ej: "25,50,75")
+     */
+    public static final String UMBRALES_COMPLETITUD_COORDINADOR = "UMBRALES_COMPLETITUD_COORDINADOR";
+
+    /**
+     * Días antes del vencimiento para marcar un estudiante en demora (coordinador).
+     * Formato: lista separada por comas (ej: "7,3,1")
+     */
+    public static final String DIAS_DEMORA_COORDINADOR = "DIAS_DEMORA_COORDINADOR";
 }

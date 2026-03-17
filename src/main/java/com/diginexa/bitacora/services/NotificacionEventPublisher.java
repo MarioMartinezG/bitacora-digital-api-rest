@@ -161,6 +161,32 @@ public class NotificacionEventPublisher {
     }
 
     /**
+     * Publica un evento de estudiante en riesgo dirigido a un coordinador.
+     */
+    public void publicarEstudianteEnRiesgo(
+            Integer coordinadorId,
+            Integer estudianteId,
+            String nombreEstudiante,
+            int progresoActual,
+            int diasRestantes,
+            LocalDate fechaLimite) {
+
+        EstudianteEnRiesgoEvent event = new EstudianteEnRiesgoEvent(
+                this,
+                coordinadorId,
+                estudianteId,
+                nombreEstudiante,
+                progresoActual,
+                diasRestantes,
+                fechaLimite
+        );
+
+        log.info("Publicando evento de estudiante en riesgo: coordinador={}, estudiante={} ({}%), {} días restantes",
+                coordinadorId, estudianteId, progresoActual, diasRestantes);
+        eventPublisher.publishEvent(event);
+    }
+
+    /**
      * Publica un evento de comentario del tutor en una sub-sección.
      */
     public void publicarComentarioTutor(
