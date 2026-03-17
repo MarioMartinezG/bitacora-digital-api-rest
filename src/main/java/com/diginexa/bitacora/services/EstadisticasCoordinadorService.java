@@ -21,14 +21,12 @@ public class EstadisticasCoordinadorService {
 
     private final UsuarioRepository usuarioRepository;
     private final ProgresoSeccionRepository progresoSeccionRepository;
-    private final AsignaturaRepository asignaturaRepository;
     private final AlertaSistemaRepository alertaSistemaRepository;
     private final TutorEstudianteRepository tutorEstudianteRepository;
 
     public EstadisticasGeneralesDTO obtenerEstadisticasGenerales() {
         long totalEstudiantes = usuarioRepository.countByRolNombre("estudiante");
         long totalTutores = usuarioRepository.countByRolNombre("tutor");
-        long totalAsignaturas = asignaturaRepository.countActivas();
         long estudiantesActivos = usuarioRepository.countActivos();
         long alertasPendientes = alertaSistemaRepository.countByResueltaFalse();
 
@@ -43,7 +41,6 @@ public class EstadisticasCoordinadorService {
         return EstadisticasGeneralesDTO.builder()
                 .totalEstudiantes(totalEstudiantes)
                 .totalTutores(totalTutores)
-                .totalAsignaturas(totalAsignaturas)
                 .estudiantesActivos(estudiantesActivos)
                 .promedioProgreso(promedioProgreso)
                 .alertasPendientes(alertasPendientes)
