@@ -37,6 +37,13 @@ public class ComentarioSubseccion {
     @CreationTimestamp
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "resuelto", nullable = false)
+    @Builder.Default
+    private boolean resuelto = false;
+
+    @Column(name = "fecha_resolucion")
+    private LocalDateTime fechaResolucion;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutor_id", insertable = false, updatable = false)
     private Usuario tutor;

@@ -63,4 +63,15 @@ public class ComentarioSubseccionController {
         log.info("GET /api/comentarios-subseccion/estudiante/{}/seccion/{}/conteo", estudianteId, seccionCodigo);
         return ResponseEntity.ok(service.contarComentariosPorSeccion(estudianteId, seccionCodigo));
     }
+
+    @PatchMapping("/{id}/resolver")
+    @PreAuthorize("hasRole('ESTUDIANTE')")
+    public ResponseEntity<ComentarioSubseccionDTO> toggleResuelto(
+            @PathVariable Long id,
+            Authentication authentication) {
+        log.info("PATCH /api/comentarios-subseccion/{}/resolver", id);
+        com.diginexa.bitacora.entities.Usuario usuario =
+                (com.diginexa.bitacora.entities.Usuario) authentication.getPrincipal();
+        return ResponseEntity.ok(service.toggleResuelto(id, usuario.getId()));
+    }
 }
