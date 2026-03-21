@@ -327,7 +327,9 @@ CREATE TABLE IF NOT EXISTS teia.comentarios_subseccion (
     seccion_codigo VARCHAR(100) NOT NULL,
     subseccion_codigo VARCHAR(100) NOT NULL,
     comentario TEXT NOT NULL,
-    fecha_creacion TIMESTAMP DEFAULT NOW()
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+    resuelto BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_resolucion TIMESTAMP
     );
 
 -- Estado asignado por el tutor a nivel de sub-sección
@@ -364,7 +366,7 @@ CREATE TABLE IF NOT EXISTS teia.momento_secciones (
 -- Actualizar constraint de notificaciones.tipo para incluir todos los tipos
 ALTER TABLE teia.notificaciones DROP CONSTRAINT IF EXISTS notificaciones_tipo_check;
 ALTER TABLE teia.notificaciones ADD CONSTRAINT notificaciones_tipo_check
-    CHECK (tipo IN ('VENCIMIENTO_PROXIMO', 'SOLICITUD_SESION', 'RESPUESTA_SOLICITUD', 'UMBRAL_ALCANZADO', 'COMENTARIO_TUTOR', 'ESTADO_TUTOR_ACTUALIZADO'));
+    CHECK (tipo IN ('VENCIMIENTO_PROXIMO', 'SOLICITUD_SESION', 'RESPUESTA_SOLICITUD', 'UMBRAL_ALCANZADO', 'COMENTARIO_TUTOR', 'ESTADO_TUTOR_ACTUALIZADO', 'COMENTARIO_RESUELTO'));
 
 -- =============================================
 -- ÍNDICES - Módulos del Tutor

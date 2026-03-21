@@ -4,8 +4,11 @@ import com.diginexa.bitacora.dtos.bitacora.ComentarioSubseccionDTO;
 import com.diginexa.bitacora.dtos.bitacora.CrearComentarioSubseccionRequest;
 import com.diginexa.bitacora.entities.ComentarioSubseccion;
 import com.diginexa.bitacora.entities.Usuario;
+import com.diginexa.bitacora.events.ComentarioResueltoPorEstudianteEvent;
 import com.diginexa.bitacora.events.ComentarioTutorEvent;
+import com.diginexa.bitacora.exceptions.domain.ResourceNotFoundException;
 import com.diginexa.bitacora.exceptions.domain.TutorNoAsignadoException;
+import com.diginexa.bitacora.exceptions.security.UnauthorizedException;
 import com.diginexa.bitacora.repositories.ComentarioSubseccionRepository;
 import com.diginexa.bitacora.repositories.TutorEstudianteRepository;
 import com.diginexa.bitacora.repositories.UsuarioRepository;
@@ -15,6 +18,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +90,38 @@ public class ComentarioSubseccionService {
                 .collect(Collectors.toList());
     }
 
+    public ComentarioSubseccionDTO toggleResuelto(Long comentarioId, Integer estudianteId) {
+        ComentarioSubseccion comentario = repository.findById(comentarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comentario no encontrado con id: " + comentarioId));
+
+        if (!comentario.getEstudianteId().equals(estudianteId)) {
+            throw new UnauthorizedException("No tienes permiso para modificar este comentario");
+        }
+
+        boolean nuevoEstado = !comentario.isResuelto();
+        comentario.setResuelto(nuevoEstado);
+        comentario.setFechaResolucion(nuevoEstado ? LocalDateTime.now() : null);
+
+        ComentarioSubseccion guardado = repository.save(comentario);
+        log.info("Comentario {} marcado como {} por estudiante {}", comentarioId, nuevoEstado ? "resuelto" : "no resuelto", estudianteId);
+
+        if (nuevoEstado) {
+            String nombreEstudiante = usuarioRepository.findById(estudianteId)
+                    .map(Usuario::getNombre)
+                    .orElse("El estudiante");
+
+            eventPublisher.publishEvent(new ComentarioResueltoPorEstudianteEvent(
+                    this,
+                    comentario.getTutorId(),
+                    nombreEstudiante,
+                    comentario.getSeccionCodigo(),
+                    comentario.getSubseccionCodigo()
+            ));
+        }
+
+        return convertToDTO(guardado, null);
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Long> contarComentariosPorSeccion(Integer estudianteId, String seccionCodigo) {
         List<ComentarioSubseccion> comentarios = repository
@@ -117,6 +153,8 @@ public class ComentarioSubseccionService {
                 .subseccionCodigo(entity.getSubseccionCodigo())
                 .comentario(entity.getComentario())
                 .fechaCreacion(entity.getFechaCreacion())
+                .resuelto(entity.isResuelto())
+                .fechaResolucion(entity.getFechaResolucion())
                 .build();
     }
 }

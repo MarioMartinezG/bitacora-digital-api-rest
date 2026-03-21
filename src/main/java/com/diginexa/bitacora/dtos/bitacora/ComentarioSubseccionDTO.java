@@ -17,4 +17,6 @@ public class ComentarioSubseccionDTO {
     private String subseccionCodigo;
     private String comentario;
     private LocalDateTime fechaCreacion;
+    private boolean resuelto;
+    private LocalDateTime fechaResolucion;
 }
