@@ -193,6 +193,23 @@ FROM teia.menu_items mi
          JOIN teia.roles r ON r.nombre = 'admin'
 WHERE mi.id IN (33, 34) ON CONFLICT (menu_item_id, rol_id) DO NOTHING;
 
+-- Menu: Herramientas IA (Coordinador)
+INSERT INTO teia.menus (id, label, icon, orden)
+VALUES (8, 'Herramientas IA', NULL, 4)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO teia.menu_roles (menu_id, rol_id)
+SELECT 8, id FROM teia.roles WHERE nombre = 'admin'
+ON CONFLICT (menu_id, rol_id) DO NOTHING;
+
+INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
+VALUES (36, 8, 'Tutor IA', 'pi pi-fw pi-comments', '/home/coordinador/tutor', 1)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
+SELECT 36, id FROM teia.roles WHERE nombre = 'admin'
+ON CONFLICT (menu_item_id, rol_id) DO NOTHING;
+
 SELECT setval(pg_get_serial_sequence('teia.menus', 'id'), (SELECT MAX(id) FROM teia.menus));
 SELECT setval(pg_get_serial_sequence('teia.menu_items', 'id'), (SELECT MAX(id) FROM teia.menu_items));
 
