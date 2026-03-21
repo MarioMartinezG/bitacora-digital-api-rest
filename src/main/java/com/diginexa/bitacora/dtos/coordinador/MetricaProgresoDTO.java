@@ -17,4 +17,5 @@ public class MetricaProgresoDTO {
     private long enDesarrollo;
     private long sinAvances;
     private double porcentajeCompletado;
+    private double promedioProgreso;
 }

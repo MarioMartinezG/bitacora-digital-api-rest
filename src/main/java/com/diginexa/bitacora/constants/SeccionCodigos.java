@@ -10,40 +10,40 @@ public final class SeccionCodigos {
         // Utility class - no instantiation
     }
 
-    // ========== MÓDULO 1: CARACTERIZA TU ASIGNATURA ==========
+    // ========== MÓDULO 1: OBSERVAR ==========
 
-    /** Caracteriza tu asignatura (identificación, justificación, contenidos) */
+    /** Observar, registrar y actuar de manera oportuna */
+    public static final String OBSERVAR = "observar";
+
+    // ========== MÓDULO 2: CARACTERIZA TU ASIGNATURA ==========
+
+    /** Identificación de tu curso (identificación, justificación) */
     public static final String CARACTERIZA = "caracteriza";
 
-    // ========== MÓDULO 2: FACTORES SITUACIONALES ==========
+    // ========== MÓDULO 3: FACTORES SITUACIONALES ==========
 
     /** 17 preguntas sobre contexto, estudiantes y docente */
     public static final String FACTORES = "factores";
 
-    // ========== MÓDULO 3: AJUSTES RAZONABLES ==========
-
-    /** Ajustes desde contenidos, actividades, evaluación y dinámicas */
-    public static final String AJUSTES = "ajustes";
-
-    // ========== MÓDULO 4: RAP Y RAC ==========
-
-    /** Resultados de Aprendizaje del Programa y del Curso */
-    public static final String RAP_RAC = "rap-rac";
-
-    // ========== MÓDULO 5: ACTIVIDADES DE APRENDIZAJE ==========
+    // ========== MÓDULO 4: ACTIVIDADES DE APRENDIZAJE ==========
 
     /** Actividades de aprendizaje del curso */
     public static final String ACTIVIDADES = "actividades";
 
-    // ========== MÓDULO 6: CÓMO EVALUARÉ ==========
+    // ========== MÓDULO 5: DISEÑO DE LA EVALUACIÓN ==========
 
     /** Estrategias de evaluación */
     public static final String EVALUACION = "evaluacion";
 
-    // ========== MÓDULO 7: SECUENCIA DEL CURSO ==========
+    // ========== MÓDULO 6: SECUENCIA DEL CURSO ==========
 
     /** Secuencia y cronograma del curso */
     public static final String SECUENCIA = "secuencia";
+
+    // ========== MÓDULO 7: CALIFICACIÓN ==========
+
+    /** Escala de calificación por resultado de aprendizaje */
+    public static final String CALIFICACION = "calificacion";
 
     // ========== MÓDULO 8: BIBLIOGRAFÍA ==========
 
@@ -54,13 +54,13 @@ public final class SeccionCodigos {
 
     /** Array con todos los códigos válidos de secciones (coincide con los códigos del frontend) */
     public static final String[] TODOS = {
+        OBSERVAR,
         CARACTERIZA,
         FACTORES,
-        AJUSTES,
-        RAP_RAC,
         ACTIVIDADES,
         EVALUACION,
         SECUENCIA,
+        CALIFICACION,
         BIBLIOGRAFIA
     };
 

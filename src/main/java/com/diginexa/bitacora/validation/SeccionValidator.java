@@ -22,11 +22,6 @@ public class SeccionValidator {
             "pregunta6", "pregunta7", "pregunta8", "pregunta9"
         ));
 
-        // Ajustes Razonables
-        CAMPOS_REQUERIDOS.put(SeccionCodigos.AJUSTES, Arrays.asList(
-            "ajustes"
-        ));
-
         // Caracteriza: sin campos requeridos a nivel raíz
     }
 

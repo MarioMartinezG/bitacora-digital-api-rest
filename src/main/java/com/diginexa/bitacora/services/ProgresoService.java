@@ -44,9 +44,12 @@ public class ProgresoService {
                 .build());
         }
 
-        // Actualizar con datos reales
+        // Actualizar con datos reales (solo módulos activos)
         int sumaPorcentajes = 0;
         for (ProgresoSeccion p : progresos) {
+            if (!SeccionCodigos.esValido(p.getSeccionCodigo())) {
+                continue; // Ignorar módulos obsoletos (ajustes, rap-rac)
+            }
             ProgresoUsuarioDTO.ProgresoSeccionDTO dto = ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
                 .seccionCodigo(p.getSeccionCodigo())
                 .estado(p.getEstado())
