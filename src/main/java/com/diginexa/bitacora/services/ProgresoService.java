@@ -2,6 +2,7 @@ package com.diginexa.bitacora.services;
 
 import com.diginexa.bitacora.constants.SeccionCodigos;
 import com.diginexa.bitacora.dtos.bitacora.EstudianteProgresoResumenDTO;
+import com.diginexa.bitacora.dtos.bitacora.MarcarRevisadoRequest;
 import com.diginexa.bitacora.dtos.bitacora.ProgresoUsuarioDTO;
 import com.diginexa.bitacora.entities.ProgresoSeccion;
 import com.diginexa.bitacora.entities.Usuario;
@@ -41,6 +42,7 @@ public class ProgresoService {
                 .seccionCodigo(codigo)
                 .estado("sin_avances")
                 .porcentaje(0)
+                .revisado(false)
                 .build());
         }
 
@@ -55,6 +57,7 @@ public class ProgresoService {
                 .estado(p.getEstado())
                 .porcentaje(p.getPorcentajeCompletado())
                 .estadoProfesor(p.getEstadoProfesor())
+                .revisado(Boolean.TRUE.equals(p.getRevisado()))
                 .build();
             secciones.put(p.getSeccionCodigo(), dto);
             sumaPorcentajes += p.getPorcentajeCompletado();
@@ -102,6 +105,7 @@ public class ProgresoService {
             .estado(guardado.getEstado())
             .porcentaje(guardado.getPorcentajeCompletado())
             .estadoProfesor(guardado.getEstadoProfesor())
+            .revisado(Boolean.TRUE.equals(guardado.getRevisado()))
             .build();
     }
 
@@ -115,12 +119,14 @@ public class ProgresoService {
                 .estado(p.getEstado())
                 .porcentaje(p.getPorcentajeCompletado())
                 .estadoProfesor(p.getEstadoProfesor())
+                .revisado(Boolean.TRUE.equals(p.getRevisado()))
                 .build())
             .orElse(ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
                 .seccionCodigo(seccionCodigo)
                 .estado("sin_avances")
                 .porcentaje(0)
                 .estadoProfesor(null)
+                .revisado(false)
                 .build());
     }
 
@@ -161,6 +167,44 @@ public class ProgresoService {
             .estado(guardado.getEstado())
             .porcentaje(guardado.getPorcentajeCompletado())
             .estadoProfesor(guardado.getEstadoProfesor())
+            .revisado(Boolean.TRUE.equals(guardado.getRevisado()))
+            .build();
+    }
+
+    /**
+     * Marca o desmarca una sección como revisada por el tutor.
+     *
+     * @param estudianteId  ID del estudiante
+     * @param seccionCodigo Código de la sección
+     * @param revisado      true para marcar como revisada, false para desmarcar
+     * @return DTO con el progreso actualizado
+     */
+    public ProgresoUsuarioDTO.ProgresoSeccionDTO marcarRevisado(
+            Integer estudianteId,
+            String seccionCodigo,
+            Boolean revisado) {
+        log.info("Tutor marcando sección {} como revisado={} para estudiante {}",
+                 seccionCodigo, revisado, estudianteId);
+
+        ProgresoSeccion progreso = repository
+            .findByUsuarioIdAndSeccionCodigo(estudianteId, seccionCodigo)
+            .orElse(ProgresoSeccion.builder()
+                .usuarioId(estudianteId)
+                .seccionCodigo(seccionCodigo)
+                .estado("sin_avances")
+                .porcentajeCompletado(0)
+                .build());
+
+        progreso.setRevisado(revisado != null ? revisado : false);
+
+        ProgresoSeccion guardado = repository.save(progreso);
+
+        return ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
+            .seccionCodigo(guardado.getSeccionCodigo())
+            .estado(guardado.getEstado())
+            .porcentaje(guardado.getPorcentajeCompletado())
+            .estadoProfesor(guardado.getEstadoProfesor())
+            .revisado(Boolean.TRUE.equals(guardado.getRevisado()))
             .build();
     }
 

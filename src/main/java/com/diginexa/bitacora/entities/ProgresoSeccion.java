@@ -46,6 +46,14 @@ public class ProgresoSeccion {
     @Column(name = "estado_profesor", length = 20)
     private String estadoProfesor;
 
+    /**
+     * Indica si el tutor ya revisó esta sección del estudiante.
+     * Por defecto false hasta que el tutor la marque como revisada.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean revisado = false;
+
     @Column(name = "fecha_actualizacion")
     @UpdateTimestamp
     private LocalDateTime fechaActualizacion;
