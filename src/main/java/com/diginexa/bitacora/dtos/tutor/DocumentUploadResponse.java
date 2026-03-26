@@ -13,13 +13,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DocumentUploadResponse {
-    private String message;
-
     @JsonProperty("uploaded_files")
     private List<DocumentDTO> uploadedFiles;
 
-    @JsonProperty("total_uploaded")
-    private Integer totalUploaded;
+    @JsonProperty("failed_files")
+    private List<FailedFileDTO> failedFiles;
 
-    private List<String> errors;
+    @JsonProperty("upload_path")
+    private String uploadPath;
 }
