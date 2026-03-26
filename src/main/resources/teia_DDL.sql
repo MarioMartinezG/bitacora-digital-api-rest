@@ -108,6 +108,19 @@ ALTER TABLE teia.progreso_secciones
 END IF;
 END $$;
 
+-- Migración: columna revisado en progreso_secciones
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'teia'
+        AND table_name = 'progreso_secciones'
+        AND column_name = 'revisado'
+    ) THEN
+ALTER TABLE teia.progreso_secciones
+    ADD COLUMN revisado BOOLEAN NOT NULL DEFAULT FALSE;
+END IF;
+END $$;
+
 
 -- Tabla de menús principales
 CREATE TABLE teia.menus (

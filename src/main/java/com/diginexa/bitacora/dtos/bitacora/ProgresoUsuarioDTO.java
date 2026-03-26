@@ -28,5 +28,9 @@ public class ProgresoUsuarioDTO {
          * Si está presente, el frontend debería mostrar este estado en lugar del calculado.
          */
         private String estadoProfesor;
+        /**
+         * Indica si el tutor ya revisó esta sección del estudiante.
+         */
+        private Boolean revisado;
     }
 }

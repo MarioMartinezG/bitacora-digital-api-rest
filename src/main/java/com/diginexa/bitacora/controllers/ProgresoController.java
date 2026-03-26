@@ -2,6 +2,7 @@ package com.diginexa.bitacora.controllers;
 
 import com.diginexa.bitacora.dtos.bitacora.ActualizarEstadoProfesorRequest;
 import com.diginexa.bitacora.dtos.bitacora.EstudianteProgresoResumenDTO;
+import com.diginexa.bitacora.dtos.bitacora.MarcarRevisadoRequest;
 import com.diginexa.bitacora.dtos.bitacora.ProgresoUsuarioDTO;
 import com.diginexa.bitacora.services.ProgresoService;
 import jakarta.validation.Valid;
@@ -96,6 +97,28 @@ public class ProgresoController {
             @PathVariable Integer tutorId) {
         log.info("GET /api/bitacora/progreso/tutor/{}/estudiantes", tutorId);
         List<EstudianteProgresoResumenDTO> progreso = progresoService.obtenerProgresoEstudiantesPorTutor(tutorId);
+        return ResponseEntity.ok(progreso);
+    }
+
+    /**
+     * Marcar o desmarcar una sección como revisada por el tutor.
+     * Solo accesible por usuarios con rol 'tutor' o 'admin'.
+     *
+     * PATCH /api/bitacora/progreso/revisado
+     */
+    @PatchMapping("/revisado")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
+    public ResponseEntity<ProgresoUsuarioDTO.ProgresoSeccionDTO> marcarRevisado(
+            @RequestBody @Valid MarcarRevisadoRequest request) {
+        log.info("PATCH /api/bitacora/progreso/revisado - Estudiante: {}, Sección: {}, Revisado: {}",
+                 request.getEstudianteId(), request.getSeccionCodigo(), request.getRevisado());
+
+        ProgresoUsuarioDTO.ProgresoSeccionDTO progreso = progresoService.marcarRevisado(
+            request.getEstudianteId(),
+            request.getSeccionCodigo(),
+            request.getRevisado()
+        );
+
         return ResponseEntity.ok(progreso);
     }
 
