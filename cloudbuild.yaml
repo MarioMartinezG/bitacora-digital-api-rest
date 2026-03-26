@@ -51,6 +51,7 @@ steps:
       - |
         sed -e "s|IMAGE_PLACEHOLDER|${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}:$COMMIT_SHA|g" \
             -e "s|CLOUD_SQL_CONN_PLACEHOLDER|${_CLOUD_SQL_CONN}|g" \
+            -e "s|TZ_PLACEHOLDER|America/Bogota|g" \
             cloudrun-service.yaml > /tmp/service.yaml
         gcloud run services replace /tmp/service.yaml \
           --region=${_REGION} \
