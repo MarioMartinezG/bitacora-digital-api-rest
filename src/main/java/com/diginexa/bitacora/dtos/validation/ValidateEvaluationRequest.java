@@ -20,6 +20,13 @@ public class ValidateEvaluationRequest {
     @JsonProperty("nombre_actividad")
     private String nombreActividad;
 
+    private String dimension;
+
+    private String metodologia;
+
+    @JsonProperty("descripcion_actividad")
+    private String descripcionActividad;
+
     @JsonProperty("descripcion_evaluacion")
     private String descripcionEvaluacion;
 
