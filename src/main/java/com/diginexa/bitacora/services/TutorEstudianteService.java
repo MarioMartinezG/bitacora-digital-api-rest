@@ -51,15 +51,17 @@ public class TutorEstudianteService {
             log.info("Asignación anterior del estudiante {} desactivada", request.getEstudianteId());
         }
 
-        // Crear nueva asignación
-        TutorEstudiante nuevaAsignacion = TutorEstudiante.builder()
-                .tutorId(request.getTutorId())
-                .estudianteId(request.getEstudianteId())
-                .activo(true)
-                .build();
+        // Reusar registro existente (activo o inactivo) para evitar violar la unique constraint
+        TutorEstudiante asignacion = repository
+                .findByTutorIdAndEstudianteId(request.getTutorId(), request.getEstudianteId())
+                .orElse(TutorEstudiante.builder()
+                        .tutorId(request.getTutorId())
+                        .estudianteId(request.getEstudianteId())
+                        .build());
+        asignacion.setActivo(true);
 
-        TutorEstudiante guardada = repository.save(nuevaAsignacion);
-        log.info("Nueva asignación creada: tutor {} -> estudiante {}", request.getTutorId(), request.getEstudianteId());
+        TutorEstudiante guardada = repository.save(asignacion);
+        log.info("Asignación guardada: tutor {} -> estudiante {}", request.getTutorId(), request.getEstudianteId());
 
         return convertToDTO(guardada, tutor, estudiante);
     }
@@ -128,11 +130,13 @@ public class TutorEstudianteService {
             Usuario tutor = tutores.get(i % tutores.size());
             Usuario estudiante = estudiantes.get(i);
 
-            TutorEstudiante nueva = TutorEstudiante.builder()
-                    .tutorId(tutor.getId())
-                    .estudianteId(estudiante.getId())
-                    .activo(true)
-                    .build();
+            TutorEstudiante nueva = repository
+                    .findByTutorIdAndEstudianteId(tutor.getId(), estudiante.getId())
+                    .orElse(TutorEstudiante.builder()
+                            .tutorId(tutor.getId())
+                            .estudianteId(estudiante.getId())
+                            .build());
+            nueva.setActivo(true);
             TutorEstudiante guardada = repository.save(nueva);
             resultado.add(convertToDTO(guardada, tutor, estudiante));
         }

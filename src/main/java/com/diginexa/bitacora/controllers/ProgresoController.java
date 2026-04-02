@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -120,6 +121,25 @@ public class ProgresoController {
         );
 
         return ResponseEntity.ok(progreso);
+    }
+
+    /**
+     * Aprobar la bitácora completa de un estudiante.
+     * Valida que todos los módulos estén completados y notifica al coordinador.
+     *
+     * POST /api/bitacora/progreso/aprobar/{estudianteId}
+     */
+    @PostMapping("/aprobar/{estudianteId}")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
+    public ResponseEntity<Void> aprobarBitacora(
+            @PathVariable Integer estudianteId,
+            Authentication authentication) {
+        log.info("POST /api/bitacora/progreso/aprobar/{}", estudianteId);
+
+        // Obtener el ID del tutor desde el token JWT
+        Integer tutorId = ((com.diginexa.bitacora.entities.Usuario) authentication.getPrincipal()).getId();
+        progresoService.aprobarBitacora(estudianteId, tutorId);
+        return ResponseEntity.noContent().build();
     }
 
     /**
