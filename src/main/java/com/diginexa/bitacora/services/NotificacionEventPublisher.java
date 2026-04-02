@@ -2,6 +2,7 @@ package com.diginexa.bitacora.services;
 
 import com.diginexa.bitacora.constants.PrioridadNotificacion;
 import com.diginexa.bitacora.events.*;
+import com.diginexa.bitacora.events.BitacoraAprobadaEstudianteEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -183,6 +184,50 @@ public class NotificacionEventPublisher {
 
         log.info("Publicando evento de estudiante en riesgo: coordinador={}, estudiante={} ({}%), {} días restantes",
                 coordinadorId, estudianteId, progresoActual, diasRestantes);
+        eventPublisher.publishEvent(event);
+    }
+
+    /**
+     * Publica un evento de bitácora aprobada dirigido a un coordinador.
+     */
+    public void publicarBitacoraAprobada(
+            Integer coordinadorId,
+            Integer estudianteId,
+            String nombreEstudiante,
+            Integer tutorId,
+            String nombreTutor) {
+
+        BitacoraAprobadaEvent event = new BitacoraAprobadaEvent(
+                this,
+                coordinadorId,
+                estudianteId,
+                nombreEstudiante,
+                tutorId,
+                nombreTutor
+        );
+
+        log.info("Publicando evento de bitácora aprobada: coordinador={}, estudiante={}, tutor={}",
+                coordinadorId, estudianteId, tutorId);
+        eventPublisher.publishEvent(event);
+    }
+
+    /**
+     * Publica un evento de bitácora aprobada dirigido al propio estudiante.
+     */
+    public void publicarBitacoraAprobadaAEstudiante(
+            Integer estudianteId,
+            Integer tutorId,
+            String nombreTutor) {
+
+        BitacoraAprobadaEstudianteEvent event = new BitacoraAprobadaEstudianteEvent(
+                this,
+                estudianteId,
+                tutorId,
+                nombreTutor
+        );
+
+        log.info("Publicando evento de bitácora aprobada para estudiante={}, tutor={}",
+                estudianteId, tutorId);
         eventPublisher.publishEvent(event);
     }
 

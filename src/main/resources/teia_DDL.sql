@@ -379,7 +379,7 @@ CREATE TABLE IF NOT EXISTS teia.momento_secciones (
 -- Actualizar constraint de notificaciones.tipo para incluir todos los tipos
 ALTER TABLE teia.notificaciones DROP CONSTRAINT IF EXISTS notificaciones_tipo_check;
 ALTER TABLE teia.notificaciones ADD CONSTRAINT notificaciones_tipo_check
-    CHECK (tipo IN ('VENCIMIENTO_PROXIMO', 'SOLICITUD_SESION', 'RESPUESTA_SOLICITUD', 'UMBRAL_ALCANZADO', 'COMENTARIO_TUTOR', 'ESTADO_TUTOR_ACTUALIZADO', 'COMENTARIO_RESUELTO'));
+    CHECK (tipo IN ('VENCIMIENTO_PROXIMO', 'SOLICITUD_SESION', 'RESPUESTA_SOLICITUD', 'UMBRAL_ALCANZADO', 'COMENTARIO_TUTOR', 'ESTADO_TUTOR_ACTUALIZADO', 'COMENTARIO_RESUELTO', 'ESTUDIANTE_EN_RIESGO', 'BITACORA_APROBADA'));
 
 -- =============================================
 -- ÍNDICES - Módulos del Tutor

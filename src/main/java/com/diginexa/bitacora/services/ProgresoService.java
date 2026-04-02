@@ -4,10 +4,14 @@ import com.diginexa.bitacora.constants.SeccionCodigos;
 import com.diginexa.bitacora.dtos.bitacora.EstudianteProgresoResumenDTO;
 import com.diginexa.bitacora.dtos.bitacora.MarcarRevisadoRequest;
 import com.diginexa.bitacora.dtos.bitacora.ProgresoUsuarioDTO;
+import com.diginexa.bitacora.entities.EstadoTutorSubseccion;
 import com.diginexa.bitacora.entities.ProgresoSeccion;
 import com.diginexa.bitacora.entities.Usuario;
+import com.diginexa.bitacora.exceptions.validation.InvalidRequestException;
+import com.diginexa.bitacora.repositories.EstadoTutorSubseccionRepository;
 import com.diginexa.bitacora.repositories.ProgresoSeccionRepository;
 import com.diginexa.bitacora.repositories.TutorEstudianteRepository;
+import com.diginexa.bitacora.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,13 +29,27 @@ import java.util.stream.Collectors;
 public class ProgresoService {
 
     private final ProgresoSeccionRepository repository;
+    private final EstadoTutorSubseccionRepository estadoTutorSubseccionRepository;
     private final TutorEstudianteRepository tutorEstudianteRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final NotificacionEventPublisher notificacionEventPublisher;
 
     @Transactional(readOnly = true)
     public ProgresoUsuarioDTO obtenerProgresoCompleto(Integer usuarioId) {
         log.debug("Obteniendo progreso completo para usuario {}", usuarioId);
 
         List<ProgresoSeccion> progresos = repository.findByUsuarioId(usuarioId);
+
+        // Cargar todas las subsecciones evaluadas por el tutor en una sola query
+        // y agruparlas por sección para calcular el estadoProfesor efectivo
+        List<EstadoTutorSubseccion> todasSubsecciones =
+                estadoTutorSubseccionRepository.findByEstudianteId(usuarioId);
+        Map<String, List<EstadoTutorSubseccion>> subseccionesPorSeccion = new HashMap<>();
+        for (EstadoTutorSubseccion sub : todasSubsecciones) {
+            subseccionesPorSeccion
+                .computeIfAbsent(sub.getSeccionCodigo(), k -> new java.util.ArrayList<>())
+                .add(sub);
+        }
 
         Map<String, ProgresoUsuarioDTO.ProgresoSeccionDTO> secciones = new HashMap<>();
         int totalSecciones = SeccionCodigos.TODOS.length;
@@ -52,11 +70,21 @@ public class ProgresoService {
             if (!SeccionCodigos.esValido(p.getSeccionCodigo())) {
                 continue; // Ignorar módulos obsoletos (ajustes, rap-rac)
             }
+
+            // Calcular estadoProfesor efectivo:
+            // 1. Si hay subsecciones evaluadas → derivar el peor estado
+            // 2. Si no → usar el estadoProfesor almacenado (override manual del tutor)
+            List<EstadoTutorSubseccion> subs = subseccionesPorSeccion
+                .getOrDefault(p.getSeccionCodigo(), java.util.Collections.emptyList());
+            String estadoProfesorEfectivo = subs.isEmpty()
+                ? p.getEstadoProfesor()
+                : derivarPeorEstado(subs);
+
             ProgresoUsuarioDTO.ProgresoSeccionDTO dto = ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
                 .seccionCodigo(p.getSeccionCodigo())
                 .estado(p.getEstado())
                 .porcentaje(p.getPorcentajeCompletado())
-                .estadoProfesor(p.getEstadoProfesor())
+                .estadoProfesor(estadoProfesorEfectivo)
                 .revisado(Boolean.TRUE.equals(p.getRevisado()))
                 .build();
             secciones.put(p.getSeccionCodigo(), dto);
@@ -114,13 +142,20 @@ public class ProgresoService {
             Integer usuarioId,
             String seccionCodigo) {
         return repository.findByUsuarioIdAndSeccionCodigo(usuarioId, seccionCodigo)
-            .map(p -> ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
-                .seccionCodigo(p.getSeccionCodigo())
-                .estado(p.getEstado())
-                .porcentaje(p.getPorcentajeCompletado())
-                .estadoProfesor(p.getEstadoProfesor())
-                .revisado(Boolean.TRUE.equals(p.getRevisado()))
-                .build())
+            .map(p -> {
+                List<EstadoTutorSubseccion> subs = estadoTutorSubseccionRepository
+                        .findByEstudianteIdAndSeccionCodigo(usuarioId, seccionCodigo);
+                String estadoProfesorEfectivo = subs.isEmpty()
+                        ? p.getEstadoProfesor()
+                        : derivarPeorEstado(subs);
+                return ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
+                    .seccionCodigo(p.getSeccionCodigo())
+                    .estado(p.getEstado())
+                    .porcentaje(p.getPorcentajeCompletado())
+                    .estadoProfesor(estadoProfesorEfectivo)
+                    .revisado(Boolean.TRUE.equals(p.getRevisado()))
+                    .build();
+            })
             .orElse(ProgresoUsuarioDTO.ProgresoSeccionDTO.builder()
                 .seccionCodigo(seccionCodigo)
                 .estado("sin_avances")
@@ -239,12 +274,91 @@ public class ProgresoService {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Deriva el estado de la sección a partir de los estados de sus subsecciones:
+     *  - Todas sin_avances  → sin_avances
+     *  - Todas completado   → completado
+     *  - Cualquier mezcla   → en_desarrollo
+     */
+    private String derivarPeorEstado(List<EstadoTutorSubseccion> subsecciones) {
+        boolean todasSinAvances = subsecciones.stream()
+                .allMatch(s -> "sin_avances".equals(s.getEstado()));
+        if (todasSinAvances) return "sin_avances";
+
+        boolean todasCompletado = subsecciones.stream()
+                .allMatch(s -> "completado".equals(s.getEstado()));
+        if (todasCompletado) return "completado";
+
+        return "en_desarrollo";
+    }
+
     private int calcularPorcentaje(String estado) {
         return switch (estado) {
             case "completado" -> 100;
             case "en_desarrollo" -> 50;
             default -> 0;
         };
+    }
+
+    /**
+     * Aprueba la bitácora completa de un estudiante.
+     * Valida que todos los módulos estén marcados como revisados (completado),
+     * luego notifica a todos los coordinadores del sistema.
+     *
+     * @param estudianteId ID del estudiante
+     * @param tutorId      ID del tutor que aprueba
+     * @throws ValidacionException si algún módulo no está completado
+     */
+    public void aprobarBitacora(Integer estudianteId, Integer tutorId) {
+        log.info("Tutor {} aprobando bitácora del estudiante {}", tutorId, estudianteId);
+
+        // Verificar que todos los módulos estén revisados
+        List<ProgresoSeccion> progresos = repository.findByUsuarioId(estudianteId);
+        long modulosRevisados = progresos.stream()
+            .filter(p -> SeccionCodigos.esValido(p.getSeccionCodigo()))
+            .filter(p -> Boolean.TRUE.equals(p.getRevisado()))
+            .count();
+
+        if (modulosRevisados < SeccionCodigos.TODOS.length) {
+            throw new InvalidRequestException(
+                String.format("No se puede aprobar la bitácora: solo %d de %d módulos están completados.",
+                    modulosRevisados, SeccionCodigos.TODOS.length)
+            );
+        }
+
+        // Obtener nombres para la notificación
+        String nombreEstudiante = usuarioRepository.findById(estudianteId)
+            .map(Usuario::getNombre)
+            .orElse("Estudiante #" + estudianteId);
+
+        String nombreTutor = usuarioRepository.findById(tutorId)
+            .map(Usuario::getNombre)
+            .orElse("Tutor #" + tutorId);
+
+        // Notificar a todos los coordinadores activos
+        List<Usuario> coordinadores = usuarioRepository.findByRolNombre("admin");
+        if (coordinadores.isEmpty()) {
+            log.warn("No se encontraron coordinadores activos para notificar la aprobación del estudiante {}", estudianteId);
+        }
+
+        for (Usuario coordinador : coordinadores) {
+            notificacionEventPublisher.publicarBitacoraAprobada(
+                coordinador.getId(),
+                estudianteId,
+                nombreEstudiante,
+                tutorId,
+                nombreTutor
+            );
+        }
+
+        // Notificar al propio estudiante
+        notificacionEventPublisher.publicarBitacoraAprobadaAEstudiante(
+            estudianteId,
+            tutorId,
+            nombreTutor
+        );
+
+        log.info("Bitácora del estudiante {} aprobada. Notificados {} coordinadores.", estudianteId, coordinadores.size());
     }
 
     private String calcularEstadoDesdeProgreso(int porcentaje) {

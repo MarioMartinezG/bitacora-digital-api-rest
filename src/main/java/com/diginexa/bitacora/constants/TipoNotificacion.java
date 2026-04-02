@@ -11,7 +11,8 @@ public enum TipoNotificacion {
     COMENTARIO_TUTOR("Comentario del tutor en sub-sección"),
     COMENTARIO_RESUELTO("Comentario marcado como resuelto por el estudiante"),
     ESTADO_TUTOR_ACTUALIZADO("Cambio de estado por el tutor en sub-sección"),
-    ESTUDIANTE_EN_RIESGO("Estudiante en riesgo de no completar la bitácora");
+    ESTUDIANTE_EN_RIESGO("Estudiante en riesgo de no completar la bitácora"),
+    BITACORA_APROBADA("Bitácora aprobada por el tutor");
 
     private final String descripcion;
 
