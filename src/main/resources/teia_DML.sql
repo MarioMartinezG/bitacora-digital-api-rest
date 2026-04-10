@@ -13,6 +13,26 @@ VALUES ('estudiante'),
        ('tutor'),
        ('admin');
 
+-- Crear usuario de fortalecimiento curricular con clave 12345678
+-- El sistema solicitará el cambio en el primer ingreso
+insert
+	into
+	teia.usuarios
+(
+	nombre,
+	correo,
+	contrasena,
+	fecha_creacion,
+	activo,
+	ultimo_acceso,
+	requiere_cambio_clave,
+	graduado)
+values('Coordinación de Fortalecimiento Curricular', 'fortalecimientocurricular@unbosque.edu.co', '$2a$10$QYTmJNiEvvUhNooxmW6L9uAgygNYKHvUzSEsoWs8EHFHEGWwDV3dm', '2026-03-17 10:27:09.084', true, null, true, false);
+
+
+insert into teia.usuario_roles 
+values (1,3);
+
 -- ============================
 -- Menú: Inicio
 -- ============================
