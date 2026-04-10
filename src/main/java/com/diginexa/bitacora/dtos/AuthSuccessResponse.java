@@ -22,4 +22,7 @@ public class AuthSuccessResponse {
     private Long expiresIn;
 
     private UserResponse user;
+
+    @JsonProperty("requiere_cambio_clave")
+    private boolean requiereCambioClave;
 }

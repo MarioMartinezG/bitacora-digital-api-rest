@@ -1,0 +1,69 @@
+# =============================================================
+# Cloud Build - Bitacora Digital API
+# Trigger: push a la rama 'develop'
+# =============================================================
+#
+# Variables a configurar en el trigger de Cloud Build Console:
+#   _REGION         : us-central1
+#   _SERVICE_NAME   : bitacora-api
+#   _CLOUD_SQL_CONN : PROJECT_ID:REGION:INSTANCE_NAME
+#
+# Secrets requeridos en Secret Manager:
+#   bitacora-db-password  : password de PostgreSQL
+#   bitacora-jwt-secret   : clave JWT (base64, minimo 256 bits)
+#   bitacora-mail-username: cuenta de correo SMTP
+#   bitacora-mail-password: app password de Gmail
+# =============================================================
+
+substitutions:
+  _REGION: us-central1
+  _SERVICE_NAME: bitacora-api
+  _CLOUD_SQL_CONN: 'PROJECT_ID:REGION:INSTANCE_NAME'  # Reemplazar en el trigger
+
+steps:
+  # ── Paso 1: Build de la imagen Docker ──────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build'
+    args:
+      - build
+      - -t
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}:$COMMIT_SHA'
+      - -t
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}:latest'
+      - .
+
+  # ── Paso 2: Push a Artifact Registry ───────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push'
+    waitFor: ['build']
+    args:
+      - push
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}'
+
+  # ── Paso 3: Deploy a Cloud Run (multi-container via service YAML) ───────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy'
+    waitFor: ['push']
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        sed -e "s|IMAGE_PLACEHOLDER|${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}:$COMMIT_SHA|g" \
+            -e "s|CLOUD_SQL_CONN_PLACEHOLDER|${_CLOUD_SQL_CONN}|g" \
+            -e "s|TZ_PLACEHOLDER|America/Bogota|g" \
+            cloudrun-service.yaml > /tmp/service.yaml
+        gcloud run services replace /tmp/service.yaml \
+          --region=${_REGION} \
+          --project=$PROJECT_ID
+        gcloud run services add-iam-policy-binding ${_SERVICE_NAME} \
+          --region=${_REGION} \
+          --member="allUsers" \
+          --role="roles/run.invoker"
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}:$COMMIT_SHA'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/bitacora/${_SERVICE_NAME}:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -32,6 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserService userService;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -52,7 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     log.debug("Usuario autenticado: {}", username);
                 } else {
-                    // ✅ Token inválido - enviar respuesta específica
+                    // Token inválido - enviar respuesta específica
                     sendErrorResponse(response, "Token JWT inválido o expirado", HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }
@@ -84,8 +85,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         body.put("message", message);
         body.put("timestamp", LocalDateTime.now());
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(response.getOutputStream(), body);
+        objectMapper.writeValue(response.getOutputStream(), body);
     }
 
     private String parseJwt(HttpServletRequest request) {

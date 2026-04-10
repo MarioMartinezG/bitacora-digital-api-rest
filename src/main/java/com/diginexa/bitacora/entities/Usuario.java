@@ -1,6 +1,8 @@
 package com.diginexa.bitacora.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -9,10 +11,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "usuarios", schema = "teia")
 public class Usuario implements UserDetails {
@@ -30,9 +36,30 @@ public class Usuario implements UserDetails {
     @Column(name = "contrasena", nullable = false, length = 255)
     private String contrasena;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "rol_id", nullable = false)
-    private Rol rol;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "usuario_roles",
+        schema = "teia",
+        joinColumns = @JoinColumn(name = "usuario_id"),
+        inverseJoinColumns = @JoinColumn(name = "rol_id")
+    )
+    @Builder.Default
+    private Set<Rol> roles = new HashSet<>();
+
+    @Column(name = "activo", nullable = false)
+    @Builder.Default
+    private Boolean activo = true;
+
+    @Column(name = "requiere_cambio_clave", nullable = false)
+    @Builder.Default
+    private Boolean requiereCambioClave = false;
+
+    @Column(name = "graduado", nullable = false)
+    @Builder.Default
+    private Boolean graduado = false;
+
+    @Column(name = "ultimo_acceso")
+    private LocalDateTime ultimoAcceso;
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
@@ -40,6 +67,9 @@ public class Usuario implements UserDetails {
     @PrePersist
     protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
+        if (activo == null) activo = true;
+        if (requiereCambioClave == null) requiereCambioClave = false;
+        if (graduado == null) graduado = false;
     }
 
     public String getUsername() {
@@ -51,7 +81,9 @@ public class Usuario implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + rol.getNombre().toUpperCase()));
+        return roles.stream()
+                .map(rol -> new SimpleGrantedAuthority("ROLE_" + rol.getNombre().toUpperCase()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -66,7 +98,7 @@ public class Usuario implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return activo != null ? activo : true;
     }
 
     @Override
@@ -76,6 +108,7 @@ public class Usuario implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        if (Boolean.TRUE.equals(graduado)) return false;
+        return activo != null ? activo : true;
     }
 }

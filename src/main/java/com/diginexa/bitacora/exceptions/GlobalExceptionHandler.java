@@ -1,14 +1,15 @@
 package com.diginexa.bitacora.exceptions;
 
 import com.diginexa.bitacora.dtos.ErrorResponse;
-import com.diginexa.bitacora.exceptions.domain.EmailAlreadyExistsException;
-import com.diginexa.bitacora.exceptions.domain.InvalidEmailFormatException;
-import com.diginexa.bitacora.exceptions.domain.MenuNotFoundException;
-import com.diginexa.bitacora.exceptions.domain.RoleNotFoundException;
+import com.diginexa.bitacora.exceptions.domain.*;
+import com.diginexa.bitacora.exceptions.domain.ResourceNotFoundException;
+import com.diginexa.bitacora.exceptions.domain.TutorServiceException;
 import com.diginexa.bitacora.exceptions.security.InvalidJwtTokenException;
 import com.diginexa.bitacora.exceptions.security.JwtAuthenticationException;
 import com.diginexa.bitacora.exceptions.validation.DuplicateMenuException;
 import com.diginexa.bitacora.exceptions.validation.DuplicateMenuItemException;
+import com.diginexa.bitacora.exceptions.validation.ForbiddenException;
+import com.diginexa.bitacora.exceptions.validation.RespuestaValidationException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import lombok.extern.slf4j.Slf4j;
@@ -140,6 +141,98 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(ex.getMessage(), "IllegalArgument", HttpStatus.BAD_REQUEST.value()));
+    }
+
+    @ExceptionHandler(ModuloNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleModuloNotFound(ModuloNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "ModuloNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(SeccionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSeccionNotFound(SeccionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "SeccionNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(CampoNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCampoNotFound(CampoNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "CampoNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(RespuestaValidationException.class)
+    public ResponseEntity<ErrorResponse> handleRespuestaValidation(RespuestaValidationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(ex.getMessage(), "RespuestaValidationError", HttpStatus.BAD_REQUEST.value()));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "ResourceNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    // ===== EXCEPCIONES DE NOTIFICACIONES =====
+
+    @ExceptionHandler(NotificacionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotificacionNotFound(NotificacionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "NotificacionNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(TutorNoAsignadoException.class)
+    public ResponseEntity<ErrorResponse> handleTutorNoAsignado(TutorNoAsignadoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "TutorNoAsignado", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(SolicitudSesionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSolicitudSesionNotFound(SolicitudSesionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "SolicitudSesionNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(ConfiguracionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleConfiguracionNotFound(ConfiguracionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "ConfiguracionNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(CalendarioModuloNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCalendarioModuloNotFound(CalendarioModuloNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ex.getMessage(), "CalendarioModuloNotFound", HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of(ex.getMessage(), "IllegalState", HttpStatus.CONFLICT.value()));
+    }
+
+    // ===== EXCEPCIONES EN OPERACIONES =====
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse.of(ex.getMessage(), "Forbidden", HttpStatus.FORBIDDEN.value()));
+    }
+
+    // ===== EXCEPCIONES DEL TUTOR INTELIGENTE =====
+
+    @ExceptionHandler(TutorResourceNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTutorResourceNotFound(TutorResourceNotFoundException ex) {
+        log.warn("Recurso no encontrado en tutor inteligente: {}", ex.getDetail());
+        Map<String, String> response = new HashMap<>();
+        response.put("detail", ex.getDetail());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(TutorServiceException.class)
+    public ResponseEntity<ErrorResponse> handleTutorServiceException(TutorServiceException ex) {
+        log.error("Error en servicio de tutor inteligente: {} - {}", ex.getErrorCode(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ErrorResponse.of(ex.getMessage(), ex.getErrorCode(), HttpStatus.SERVICE_UNAVAILABLE.value()));
     }
 
     // ===== CUALQUIER OTRA EXCEPCIÓN NO CONTROLADA =====

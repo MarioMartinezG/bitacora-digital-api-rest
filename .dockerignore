@@ -1,0 +1,20 @@
+# Control de versiones
+.git
+.gitattributes
+.gitignore
+
+# Build tools / IDE
+.gradle
+.idea
+.claude
+gradlew.bat
+
+# Output de build (se genera internamente en el stage de build)
+build/
+
+# Datos locales y logs
+db/
+logs/
+
+# Documentación
+*.md

@@ -1,0 +1,82 @@
+# =============================================================
+# Cloud Run Service Spec - Bitacora Digital API
+# Multi-container: api + cloud-sql-proxy (sidecar)
+#
+# Los placeholders IMAGE_PLACEHOLDER y CLOUD_SQL_CONN_PLACEHOLDER
+# son reemplazados por sed en el paso de deploy de cloudbuild.yaml
+# =============================================================
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: bitacora-api
+spec:
+  template:
+    metadata:
+      annotations:
+        # gen2 es requerido para multi-container
+        run.googleapis.com/execution-environment: gen2
+        # Mantiene el scheduler activo (evita scale-to-zero)
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "3"
+        # Sticky sessions para WebSockets (STOMP)
+        run.googleapis.com/session-affinity: "true"
+    spec:
+      serviceAccountName: 459460338363-compute@developer.gserviceaccount.com
+      timeoutSeconds: 60
+      containerConcurrency: 80
+      containers:
+        # ── Contenedor principal: API Spring Boot ─────────────────────────────
+        - name: api
+          image: IMAGE_PLACEHOLDER
+          ports:
+            - name: http1
+              containerPort: 8080
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1000m"
+          env:
+            - name: TZ
+              value: TZ_PLACEHOLDER
+            - name: DB_URL
+              # El proxy sidecar escucha en localhost:5432
+              value: jdbc:postgresql://127.0.0.1:5432/teia_db
+            - name: DB_USERNAME
+              value: teia_user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bitacora-db-password
+                  key: latest
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bitacora-jwt-secret
+                  key: latest
+            - name: MAIL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: bitacora-mail-username
+                  key: latest
+            - name: MAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bitacora-mail-password
+                  key: latest
+            - name: TUTOR_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: bitacora-tutor-service-url
+                  key: latest
+
+        # ── Sidecar: Cloud SQL Auth Proxy ─────────────────────────────────────
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2
+          args:
+            - "--address=0.0.0.0"
+            - "--port=5432"
+            - "CLOUD_SQL_CONN_PLACEHOLDER"
+          resources:
+            limits:
+              memory: 128Mi
+              cpu: "100m"
