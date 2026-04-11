@@ -57,6 +57,13 @@ FROM teia.menu_items mi
          JOIN teia.roles r ON r.nombre = 'estudiante'
 WHERE mi.menu_id = 1;
 
+-- Submenú: Documentos guía del curso
+INSERT INTO teia.menu_items (id, menu_id, label, icon, router_link, orden)
+VALUES (37, 1, 'Documentos guía del curso', 'pi pi-file-pdf', '/home/documentos-guia', 2);
+
+INSERT INTO teia.menu_item_roles (menu_item_id, rol_id)
+SELECT 37, id FROM teia.roles WHERE nombre = 'estudiante';
+
 
 -- ============================
 -- Menú: Bitácora Digital

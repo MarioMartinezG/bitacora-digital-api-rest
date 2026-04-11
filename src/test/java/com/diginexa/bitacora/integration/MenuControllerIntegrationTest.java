@@ -37,6 +37,7 @@ class MenuControllerIntegrationTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].label").value("Inicio"))
                 .andExpect(jsonPath("$[0].items[0].label").value("Dashboard"))
+                .andExpect(jsonPath("$[0].items[1].label").value("Documentos guía del curso"))
                 .andExpect(jsonPath("$[1].label").value("Bitácora Digital"))
                 .andExpect(jsonPath("$[1].items[0].label").value("Caracteriza tu Asignatura"));
     }
