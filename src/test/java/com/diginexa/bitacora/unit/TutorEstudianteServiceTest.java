@@ -20,8 +20,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -57,7 +59,7 @@ class TutorEstudianteServiceTest {
                 .nombre("Juan Pérez")
                 .correo("juan.perez@test.com")
                 .contrasena("password")
-                .rol(rolTutor)
+                .roles(new HashSet<>(Set.of(rolTutor)))
                 .build();
 
         estudiante1 = Usuario.builder()
@@ -65,7 +67,7 @@ class TutorEstudianteServiceTest {
                 .nombre("María García")
                 .correo("maria.garcia@test.com")
                 .contrasena("password")
-                .rol(rolEstudiante)
+                .roles(new HashSet<>(Set.of(rolEstudiante)))
                 .build();
 
         estudiante2 = Usuario.builder()
@@ -73,7 +75,7 @@ class TutorEstudianteServiceTest {
                 .nombre("Carlos López")
                 .correo("carlos.lopez@test.com")
                 .contrasena("password")
-                .rol(rolEstudiante)
+                .roles(new HashSet<>(Set.of(rolEstudiante)))
                 .build();
 
         asignacion1 = TutorEstudiante.builder()
@@ -131,7 +133,7 @@ class TutorEstudianteServiceTest {
                 .id(200)
                 .nombre("Nuevo Tutor")
                 .correo("nuevo.tutor@test.com")
-                .rol(rolTutor)
+                .roles(new HashSet<>(Set.of(rolTutor)))
                 .build();
 
         AsignarTutorRequest request = new AsignarTutorRequest();

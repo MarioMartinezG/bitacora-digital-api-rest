@@ -20,6 +20,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -70,7 +73,7 @@ class TutorEstudianteControllerIntegrationTest {
                 .nombre("Tutor de Prueba")
                 .correo("tutor.test@bitacora.com")
                 .contrasena("password123")
-                .rol(rolTutor)
+                .roles(new HashSet<>(Set.of(rolTutor)))
                 .build();
         tutor = usuarioRepository.save(tutor);
 
@@ -78,7 +81,7 @@ class TutorEstudianteControllerIntegrationTest {
                 .nombre("Estudiante Uno")
                 .correo("estudiante1.test@bitacora.com")
                 .contrasena("password123")
-                .rol(rolEstudiante)
+                .roles(new HashSet<>(Set.of(rolEstudiante)))
                 .build();
         estudiante1 = usuarioRepository.save(estudiante1);
 
@@ -86,7 +89,7 @@ class TutorEstudianteControllerIntegrationTest {
                 .nombre("Estudiante Dos")
                 .correo("estudiante2.test@bitacora.com")
                 .contrasena("password123")
-                .rol(rolEstudiante)
+                .roles(new HashSet<>(Set.of(rolEstudiante)))
                 .build();
         estudiante2 = usuarioRepository.save(estudiante2);
 
@@ -94,7 +97,7 @@ class TutorEstudianteControllerIntegrationTest {
                 .nombre("Estudiante Sin Tutor")
                 .correo("estudiante3.test@bitacora.com")
                 .contrasena("password123")
-                .rol(rolEstudiante)
+                .roles(new HashSet<>(Set.of(rolEstudiante)))
                 .build();
         estudianteSinTutor = usuarioRepository.save(estudianteSinTutor);
 
@@ -134,7 +137,7 @@ class TutorEstudianteControllerIntegrationTest {
                 .nombre("Nuevo Tutor")
                 .correo("nuevo.tutor@bitacora.com")
                 .contrasena("password123")
-                .rol(rolTutor)
+                .roles(new HashSet<>(Set.of(rolTutor)))
                 .build();
         nuevoTutor = usuarioRepository.save(nuevoTutor);
 
@@ -195,7 +198,7 @@ class TutorEstudianteControllerIntegrationTest {
                 .nombre("Tutor Sin Estudiantes")
                 .correo("tutor.solo@bitacora.com")
                 .contrasena("password123")
-                .rol(rolTutor)
+                .roles(new HashSet<>(Set.of(rolTutor)))
                 .build();
         tutorSinEstudiantes = usuarioRepository.save(tutorSinEstudiantes);
 

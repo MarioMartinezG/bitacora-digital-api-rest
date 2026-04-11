@@ -26,8 +26,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -68,7 +70,7 @@ class SolicitudSesionServiceTest {
                 .nombre("María García")
                 .correo("maria.garcia@test.com")
                 .contrasena("password")
-                .rol(rolEstudiante)
+                .roles(new HashSet<>(Set.of(rolEstudiante)))
                 .build();
 
         tutor = Usuario.builder()
@@ -76,7 +78,7 @@ class SolicitudSesionServiceTest {
                 .nombre("Juan Pérez")
                 .correo("juan.perez@test.com")
                 .contrasena("password")
-                .rol(rolTutor)
+                .roles(new HashSet<>(Set.of(rolTutor)))
                 .build();
 
         solicitudPendiente = SolicitudSesion.builder()

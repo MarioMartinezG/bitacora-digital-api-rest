@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,16 +18,16 @@ public class UserResponse {
     @JsonProperty("username")
     private String username;
 
-    @JsonProperty("role")
-    private Integer rolId;
+    @JsonProperty("roles")
+    private List<Integer> roles;
 
     private String nombre;
     private String correo;
 
-    public UserResponse(Integer id, String correo, Integer rolId, String nombre) {
+    public UserResponse(Integer id, String correo, List<Integer> roles, String nombre) {
         this.id = id;
         this.correo = correo;
-        this.rolId = rolId;
+        this.roles = roles;
         this.nombre = nombre;
         this.username = extractUsernameFromEmail(correo);
     }
