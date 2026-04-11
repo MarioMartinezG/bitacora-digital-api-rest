@@ -22,6 +22,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -68,7 +70,7 @@ class NotificacionControllerIntegrationTest {
                 .nombre("Usuario Notificaciones Test")
                 .correo("notificaciones.test@bitacora.com")
                 .contrasena("password123")
-                .rol(rolEstudiante)
+                .roles(new HashSet<>(Set.of(rolEstudiante)))
                 .build();
         usuario = usuarioRepository.save(usuario);
 

@@ -29,10 +29,10 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -65,15 +65,14 @@ public class AuthService {
             String accessToken = jwtService.generateAccessToken(usuario);
             String refreshToken = jwtService.generateRefreshToken(usuario);
 
-            Integer primaryRolId = usuario.getRoles().stream()
-                    .min(Comparator.comparing(Rol::getId))
+            List<Integer> rolesIds = usuario.getRoles().stream()
                     .map(r -> Math.toIntExact(r.getId()))
-                    .orElse(0);
+                    .collect(Collectors.toList());
 
             UserResponse userResponse = new UserResponse(
                     usuario.getId(),
                     usuario.getCorreo(),
-                    primaryRolId,
+                    rolesIds,
                     usuario.getNombre()
             );
 
@@ -122,15 +121,14 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(savedUsuario);
         String refreshToken = jwtService.generateRefreshToken(savedUsuario);
 
-        Integer primaryRolId = savedUsuario.getRoles().stream()
-                .min(Comparator.comparing(Rol::getId))
+        List<Integer> rolesIds = savedUsuario.getRoles().stream()
                 .map(r -> Math.toIntExact(r.getId()))
-                .orElse(0);
+                .collect(Collectors.toList());
 
         UserResponse userResponse = new UserResponse(
                 savedUsuario.getId(),
                 savedUsuario.getCorreo(),
-                primaryRolId,
+                rolesIds,
                 savedUsuario.getNombre()
         );
 
@@ -221,15 +219,14 @@ public class AuthService {
             String newAccessToken = jwtService.generateAccessToken(usuario);
             String newRefreshToken = jwtService.generateRefreshToken(usuario);
 
-            Integer primaryRolId = usuario.getRoles().stream()
-                    .min(Comparator.comparing(Rol::getId))
+            List<Integer> rolesIds = usuario.getRoles().stream()
                     .map(r -> Math.toIntExact(r.getId()))
-                    .orElse(0);
+                    .collect(Collectors.toList());
 
             UserResponse userResponse = new UserResponse(
                     usuario.getId(),
                     usuario.getCorreo(),
-                    primaryRolId,
+                    rolesIds,
                     usuario.getNombre()
             );
 

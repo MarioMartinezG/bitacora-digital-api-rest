@@ -24,6 +24,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -77,7 +80,7 @@ class SolicitudSesionControllerIntegrationTest {
                 .nombre("Tutor Sesiones Test")
                 .correo("tutor.sesiones@bitacora.com")
                 .contrasena("password123")
-                .rol(rolTutor)
+                .roles(new HashSet<>(Set.of(rolTutor)))
                 .build();
         tutor = usuarioRepository.save(tutor);
 
@@ -85,7 +88,7 @@ class SolicitudSesionControllerIntegrationTest {
                 .nombre("Estudiante Sesiones Test")
                 .correo("estudiante.sesiones@bitacora.com")
                 .contrasena("password123")
-                .rol(rolEstudiante)
+                .roles(new HashSet<>(Set.of(rolEstudiante)))
                 .build();
         estudiante = usuarioRepository.save(estudiante);
 
@@ -93,7 +96,7 @@ class SolicitudSesionControllerIntegrationTest {
                 .nombre("Estudiante Sin Tutor")
                 .correo("estudiante.sintutor@bitacora.com")
                 .contrasena("password123")
-                .rol(rolEstudiante)
+                .roles(new HashSet<>(Set.of(rolEstudiante)))
                 .build();
         estudianteSinTutor = usuarioRepository.save(estudianteSinTutor);
 
