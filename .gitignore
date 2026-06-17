@@ -71,3 +71,6 @@ HELP.md
 *.tmp
 *.bak
 *.swp
+
+### Manuals ###
+manual-instalacion-configuracion.pdf
