@@ -14,13 +14,18 @@ RUN ./gradlew bootWar -x test --no-daemon
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine
+
+# Usuario no-root para producción: crear antes de WORKDIR para poder asignar ownership
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 WORKDIR /app
 
-# Usuario no-root para producción
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Dar ownership de /app (incl. directorio de logs) al usuario no-root
+RUN mkdir -p /app/logs && chown -R appuser:appgroup /app
+
 USER appuser
 
-COPY --from=build /app/build/libs/app.war app.war
+COPY --chown=appuser:appgroup --from=build /app/build/libs/app.war app.war
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.war"]
