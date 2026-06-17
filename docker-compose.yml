@@ -1,5 +1,7 @@
 services:
   postgres:
+    profiles:
+      - local-db
     image: postgres:15.14
     container_name: postgres_teia
     restart: always
@@ -11,6 +13,31 @@ services:
       - "5432:5432"
     volumes:
       - ./db/postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U teia_user -d teia_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-volumes:
-  postgres_data:
+  api:
+    image: mmartinezg531/bitacora-digital-api-rest:1.0.0
+    container_name: bitacora_api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      # Declarados explícitamente para que el compose documente la dependencia de BD.
+      # Los valores vienen del .env; los defaults cubren el escenario con perfil local-db.
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/teia_db}
+      DB_USERNAME: ${DB_USERNAME:-teia_user}
+      DB_PASSWORD: ${DB_PASSWORD:-teia_password}
+    # Permite alcanzar servicios del host desde el contenedor.
+    # En Windows/Mac con Docker Desktop ya está disponible; en Linux lo resuelve host-gateway.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false   # no falla si el perfil local-db no está activo
